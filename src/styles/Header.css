@@ -1,0 +1,114 @@
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Button Styling */
+.nav-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: color 0.3s ease-in-out;
+}
+
+.nav-btn:hover {
+  color: #00ff99; /* Light green hover effect */
+  text-decoration: underline;
+}
+
+/* Social Media Icons */
+.icon-links {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-links a {
+  color: #ffffff;
+  font-size: 16px;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.icon-links a:hover {
+  color: #00ff99;
+  transform: scale(1.2);
+}
+
+
+  /* Header Container */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #1a1a1a;
+    padding: 15px 30px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Left Navigation */
+  .nav-left {
+    display: flex;
+    flex-direction: column; /* Two-line layout */
+    gap: 3px;
+  }
+  
+  /* Top Row (How it works + Advanced) */
+  .nav-top-row {
+    display: flex;
+    gap: 8px;
+  }
+  
+  /* Bottom Row (Support + Social Icons) */
+  .nav-bottom-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  
+  /* Buttons */
+  .advanced-btn,
+  .support-btn,
+  .wallet-btn {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s;
+    font-size: 14px;
+  }
+  
+  .advanced-btn:hover,
+  .support-btn:hover,
+  .wallet-btn:hover {
+    color: #f1c40f;
+  }
+  
+  /* Social Media Icons */
+  .icon-link {
+    color: #ffffff;
+    font-size: 18px;
+    transition: color 0.3s ease;
+  }
+  
+  .icon-link:hover {
+    color: #1da1f2; /* Highlight on hover */
+  }
+  
+  /* Wallet Button */
+  .wallet-btn {
+    background-color: #4caf50;
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+  }
+  
+  .wallet-btn:hover {
+    background-color: #388e3c;
+  }
+

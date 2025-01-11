@@ -1,0 +1,180 @@
+/* Center the entire form on the page */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh; /* Full viewport height */
+  background-color: #0d0d0d;
+  padding: 20px; /* Avoid overlapping the header */
+}
+
+/* Form styling with increased width */
+.create-form {
+  width: 600px; /* Increased width from 400px to 600px */
+  background-color: #1a1a1a;
+  padding: 40px 50px; /* More padding for better spacing */
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border: 1px solid #333;
+  justify-content: center;
+}
+
+/* Input and Textarea Fields */
+.create-form input,
+.create-form textarea {
+  width: 100%;
+  padding: 12px;
+  background-color: #262626;
+  border: 1px solid #444;
+  border-radius: 5px;
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.create-form input::placeholder,
+.create-form textarea::placeholder {
+  color: #888888;
+  font-size: 14px;
+}
+
+/* File Upload Section */
+.file-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #444;
+  background-color: #262626;
+  padding: 25px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+
+.upload-icon {
+    color: #888;
+    margin-bottom: 10px;
+  }
+
+  
+  .select-file-btn {
+    background-color: #444;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+  
+  .select-file-btn:hover {
+    background-color: #555;
+  }
+  
+.file-upload p {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #aaaaaa;
+}
+
+.file-upload button {
+  background-color: #444;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.file-upload button:hover {
+  background-color: #555;
+}
+
+/* Show More Options */
+.show-more {
+  text-align: center;
+  color: #00ff99;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.show-more:hover {
+  text-decoration: underline;
+}
+
+/* More Options Section */
+.more-options {
+  background-color: #262626;
+  padding: 20px;
+  border-radius: 5px;
+  border: 1px solid #444;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Create Coin Button */
+.create-btn {
+  background-color: #1e90ff;
+  color: #ffffff;
+  padding: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 18px;
+  border: none;
+}
+
+
+.create-btn:hover {
+  background-color: #187bcd;
+}
+
+/* Info Text */
+.info-text {
+  font-size: 13px;
+  text-align: center;
+  margin-top: 10px;
+  color: #888;
+}
+
+  /* Go Back Button */
+  .go-back {
+    color: #ffffff;
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+  
+  .go-back:hover {
+    text-decoration: underline;
+  }
+  
+  /* Disabled Button */
+.create-btn.disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    color: #666;
+  }
+  
+  /* Enabled Button */
+  .create-btn.enabled {
+    background-color: #007bff;
+    cursor: pointer;
+    color: white;
+  }
+  
+  .error-message {
+    color: red;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
