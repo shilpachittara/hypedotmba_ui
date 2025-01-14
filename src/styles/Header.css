@@ -1,114 +1,95 @@
+/* Header - Consistent Across All Pages */
+.header {
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  color: #ffffff;
+  padding: 15px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: none;
+  box-shadow: none;
+}
 
+/* Logo */
+.logo {
+  width: 50px;
+  height: 50px;
+  transition: transform 0.3s ease-in-out;
+}
+
+.logo:hover {
+  transform: scale(1.1);
+}
+
+/* Navigation Links */
+.nav-left,
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
-/* Button Styling */
-.nav-btn {
-  background: none;
-  border: none;
+.nav-left a,
+.nav-right .wallet-btn {
   color: #ffffff;
-  cursor: pointer;
-  font-weight: bold;
+  text-decoration: none;
   font-size: 14px;
-  transition: color 0.3s ease-in-out;
+  transition: color 0.3s ease;
 }
 
-.nav-btn:hover {
-  color: #00ff99; /* Light green hover effect */
-  text-decoration: underline;
+.nav-left a:hover,
+.nav-right .wallet-btn:hover {
+  color: #10b981;
 }
 
-/* Social Media Icons */
-.icon-links {
-  display: flex;
-  gap: 8px;
+/* Wallet Button */
+.wallet-btn {
+  background-color: #10b981;
+  padding: 8px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.icon-links a {
+.wallet-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.wallet-btn.connected {
+  background-color: #4ade80;
+}
+
+/* Social Icons */
+.icon-link {
   color: #ffffff;
-  font-size: 16px;
-  transition: transform 0.3s ease, color 0.3s ease;
+  font-size: 1.2rem;
+  margin-left: 10px;
+  transition: transform 0.3s ease;
 }
 
-.icon-links a:hover {
-  color: #00ff99;
+.icon-link:hover {
   transform: scale(1.2);
 }
 
+.nav-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
 
-  /* Header Container */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #1a1a1a;
-    padding: 15px 30px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  }
-  
-  /* Left Navigation */
-  .nav-left {
-    display: flex;
-    flex-direction: column; /* Two-line layout */
-    gap: 3px;
-  }
-  
-  /* Top Row (How it works + Advanced) */
-  .nav-top-row {
-    display: flex;
-    gap: 8px;
-  }
-  
-  /* Bottom Row (Support + Social Icons) */
-  .nav-bottom-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  
-  /* Buttons */
-  .advanced-btn,
-  .support-btn,
-  .wallet-btn {
-    background: none;
-    border: none;
-    color: #ffffff;
-    font-weight: bold;
-    cursor: pointer;
-    transition: color 0.3s;
-    font-size: 14px;
-  }
-  
-  .advanced-btn:hover,
-  .support-btn:hover,
-  .wallet-btn:hover {
-    color: #f1c40f;
-  }
-  
-  /* Social Media Icons */
-  .icon-link {
-    color: #ffffff;
-    font-size: 18px;
-    transition: color 0.3s ease;
-  }
-  
-  .icon-link:hover {
-    color: #1da1f2; /* Highlight on hover */
-  }
-  
-  /* Wallet Button */
-  .wallet-btn {
-    background-color: #4caf50;
-    padding: 8px 15px;
-    border-radius: 5px;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
-  }
-  
-  .wallet-btn:hover {
-    background-color: #388e3c;
-  }
+/* Remove Unnecessary Borders and Shadows */
+* {
+  border: none !important;
+  box-shadow: none !important;
+}
 

@@ -1,0 +1,122 @@
+/* Uniform Background */
+/* Board Page - Background Unified */
+.board-container {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #1e3a8a, #0a0a0a);
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  padding-top: 100px; /* Adjusted for Header */
+}
+
+/* Remove Header Border on Board Page */
+.header {
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+/* Start a New Coin Button */
+.start-coin-btn {
+  background-color: #f97316;
+  color: #ffffff;
+  padding: 10px 25px;
+  border-radius: 5px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.start-coin-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
+}
+
+
+
+.wallet-btn {
+  background-color: #2ecc71;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+}
+
+/* Start a New Coin Button */
+.start-coin {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.start-coin-btn {
+  background-color: #f97316;
+  color: #ffffff;
+  padding: 10px 25px;
+  border-radius: 5px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.start-coin-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
+}
+
+/* Search Bar */
+.search-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px auto;
+}
+
+.search-bar {
+  width: 300px;
+  padding: 12px;
+  border-radius: 5px 0 0 5px;
+  border: 1px solid #444;
+  background-color: #1f2937;
+  color: #ffffff;
+}
+
+.search-btn {
+  padding: 12px 20px;
+  border-radius: 0 5px 5px 0;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.search-btn:hover {
+  background-color: #059669;
+}
+
+/* Token Cards Grid */
+.token-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Token Card */
+.token-card {
+  background-color: #1c1c1e;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease-in-out;
+}
+
+.token-card:hover {
+  transform: scale(1.03);
+}
+
+/* Loading Text */
+.loading-text {
+  text-align: center;
+  font-size: 1.2rem;
+  margin-top: 50px;
+  color: #facc15;
+}
