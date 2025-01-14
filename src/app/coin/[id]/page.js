@@ -196,7 +196,7 @@ const TokenDetailPage = () => {
       setSuccessMessage("Sell successful!");
 
       // Refresh the user's balance after selling
-      await fetchUserTokenBalance();
+      await fetchBalanceAndPrice();
     } catch (error) {
       console.error("Error during sale:", error);
       setErrorMessage("Transaction failed. Please try again.");
