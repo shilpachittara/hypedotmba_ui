@@ -1,97 +1,131 @@
 /* Overlay */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-  
-  /* Modal Box */
-  .modal-content {
-    background-color: #1e1e1e;
-    color: #fff;
-    padding: 30px 40px;
-    width: 500px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-    text-align: center;
-  }
-  
-  /* Title */
-  .modal-title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 20px;
-  }
-  
-  /* Description */
-  .modal-description {
-    font-size: 16px;
-    line-height: 1.5;
-    margin-bottom: 20px;
-  }
-  
-  /* Highlighted Text */
-  .highlight {
-    color: #f1c40f;
-    font-weight: bold;
-  }
-  
-  /* Steps List */
-  .modal-steps {
-    text-align: left;
-    margin: 20px 0;
-    padding-left: 20px;
-    list-style-type: decimal;
-  }
-  
-  .modal-steps li {
-    margin-bottom: 10px;
-    font-size: 15px;
-  }
-  
-  /* Note Text */
-  .modal-note {
-    font-size: 14px;
-    color: #bbb;
-    margin-top: 10px;
-  }
-  
-  /* Close Button */
-  .ready-btn {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #4caf50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  .ready-btn:hover {
-    background-color: #388e3c;
-  }
-  
-  /* How it works button */
-  .how-it-works-btn {
-    background: none;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 14px;
-    transition: color 0.3s ease;
-  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.5s ease-in-out;
+}
 
-  
-  .how-it-works-btn:hover {
-    color: #f1c40f;
+/* Modal Box */
+.modal-content {
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(15px);
+  border-radius: 15px;
+  padding: 40px 50px;
+  width: 500px;
+  color: #ffffff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+  transform: scale(0.9);
+  animation: slideIn 0.4s ease forwards;
+}
+
+/* Modal Title */
+.modal-title {
+  font-size: 28px;
+  font-weight: bold;
+  background: linear-gradient(90deg, #38bdf8, #9333ea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 20px;
+}
+
+/* Description */
+.modal-description {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  color: #cbd5e1;
+}
+
+/* Highlighted Text */
+.highlight {
+  color: #10b981;
+  font-weight: bold;
+}
+
+/* Steps List */
+.modal-steps {
+  text-align: left;
+  margin: 20px 0;
+  padding-left: 20px;
+  list-style-type: decimal;
+}
+
+.modal-steps li {
+  margin-bottom: 10px;
+  font-size: 15px;
+  color: #e2e8f0;
+}
+
+/* Note Text */
+.modal-note {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-top: 15px;
+  font-style: italic;
+}
+
+/* Close Button */
+.ready-btn {
+  margin-top: 25px;
+  padding: 12px 25px;
+  background: linear-gradient(90deg, #10b981, #38bdf8);
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0px 4px 20px rgba(16, 185, 129, 0.4);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ready-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0px 6px 30px rgba(16, 185, 129, 0.5);
+}
+
+/* How it Works Button */
+.how-it-works-btn {
+  background: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.how-it-works-btn:hover {
+  background-color: rgba(56, 189, 248, 0.2);
+  transform: scale(1.05);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  0% {
+    transform: scale(0.9) translateY(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}

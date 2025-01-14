@@ -28,151 +28,18 @@ body {
   overflow-x: hidden;
 }
 
-
-.nav-left a,
-.nav-right .wallet-btn {
-  margin-right: 4px;
-  color: #ccc;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.highlight-btn {
-  background-color: #f1c40f;
-  border: none;
-  padding: 5px 10px;
-  margin: 0 5px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.highlight-btn.secondary {
-  background-color: #3498db;
-  color: #fff;
-}
-
-.wallet-btn {
-  background-color: #2ecc71;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-/* Left Side: Token Image */
-.token-image-container {
-  width: 80px;
-  height: 80px;
-  margin-right: 15px;
-  flex-shrink: 0;
-}
-
-.token-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid #444;
-  background-color: #fff;
-
-}
-
-/* Right Side: Token Details */
-.token-details {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  color: #e5e5e7;
-}
-
-/* Creator and Meta Info */
-.creator-text {
-  font-size: 0.8rem;
-  color: #7c7c81;
-  margin-bottom: 5px;
-}
-
-.market-cap {
-  font-size: 0.85rem;
-  color: #4cd964;
-  /* Green for positive market cap */
-  margin-bottom: 3px;
-}
-
-.replies {
-  font-size: 0.8rem;
-  color: #9c9c9f;
-  margin-bottom: 10px;
-}
-
-/* Token Title */
-.token-title {
-  font-size: 1.1rem;
-  font-weight: bold;
+/* Go Back Button */
+.go-back {
   color: #ffffff;
-  margin-bottom: 5px;
-}
-
-/* Token Description */
-.token-description {
-  font-size: 0.9rem;
-  color: #c7c7cc;
-  line-height: 1.4;
-}
-
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background-color: #1e1e1e;
-  padding: 30px;
-  border-radius: 10px;
-  width: 400px;
-  text-align: center;
-  color: #fff;
-}
-
-.modal-content h2 {
+  background-color: transparent;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
   margin-bottom: 20px;
-  font-size: 24px;
 }
 
-.modal-content ol {
-  text-align: left;
-  margin-top: 20px;
+.go-back:hover {
+  text-decoration: underline;
 }
 
-.modal-content .highlight {
-  color: #f1c40f;
-}
-
-.pump-btn {
-  margin-top: 20px;
-  padding: 10px 20px;
-  background-color: #27ae60;
-  border: none;
-  color: #fff;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-
-.wallet-btn {
-  background-color: #2ecc71;
-  padding: 10px 20px;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}

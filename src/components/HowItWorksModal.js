@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import "../styles/HowItWorksModal.css";  // Import the styles
+import "../styles/HowItWorksModal.css"; // Import updated styles
 
 const HowItWorksModal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,7 +11,7 @@ const HowItWorksModal = () => {
 
   return (
     <>
-      {/* Button to Open Modal */}
+      {/* Open Modal Button */}
       <button onClick={openModal} className="how-it-works-btn">
         [how it works]
       </button>
@@ -19,25 +19,23 @@ const HowItWorksModal = () => {
       {isOpen && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 className="modal-title">how it works</h2>
+            <h2 className="modal-title">How It Works</h2>
             <p className="modal-description">
-              Hype.mba prevents rugs by making sure that all created tokens are safe.
-              each coin on pump is a <span className="highlight">fair-launch</span> with 
+              <strong>Hype.mba</strong> prevents rugs by ensuring all created tokens are safe. 
+              Every coin on the platform is a <span className="highlight">fair launch</span> with 
               <span className="highlight"> no presale</span> and 
               <span className="highlight"> no team allocation</span>.
             </p>
 
             <ol className="modal-steps">
-              <li>step 1: pick a coin that you like</li>
-              <li>step 2: buy the coin on the bonding curve</li>
-              <li>step 3: sell at any time to lock in your profits or losses</li>
-              <li>step 4: when enough people buy, it reaches a market cap of $100k</li>
-              <li>step 5: $17k of liquidity is deposited in Raydium and burned</li>
+              <li>Step 1: Pick a coin that you like.</li>
+              <li>Step 2: Buy the coin on the bonding curve.</li>
+              <li>Step 3: Sell anytime to lock in profits or losses.</li>
+              <li>Step 4: Reach $100k market cap to trigger liquidity.</li>
+              <li>Step 5: $17k liquidity added to Raydium and burned.</li>
             </ol>
 
-            <p className="modal-note">
-              There is a 1% fee on all trades that happen on pump.
-            </p>
+            <p className="modal-note">⚠️ A 1% fee applies to all trades on Hype.mba.</p>
 
             <button onClick={closeModal} className="ready-btn">
               [I'm ready to pump!]

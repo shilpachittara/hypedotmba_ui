@@ -68,14 +68,15 @@
   display: flex;
   justify-content: center;
   margin: 20px auto;
+
 }
 
 .search-bar {
   width: 300px;
   padding: 12px;
-  border-radius: 5px 0 0 5px;
-  border: 1px solid #444;
-  background-color: #1f2937;
+  border-radius: 10px 0 0 10px;
+  border: 1px solid #082b62;
+  background-color: #0b579e;
   color: #ffffff;
 }
 
@@ -98,19 +99,6 @@
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
   padding: 20px;
-}
-
-/* Token Card */
-.token-card {
-  background-color: #1c1c1e;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.4);
-  transition: transform 0.2s ease-in-out;
-}
-
-.token-card:hover {
-  transform: scale(1.03);
 }
 
 /* Loading Text */

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { ethers } from "ethers";
 import { fetchTokenById } from "../../../utils/_api";
 import Header from "@/components/Header";
-import "../../../styles/TokenDetail.css";
+import "../../../styles/TokenDetailPage.css";
 import { useWallet } from "@/context/WalletContext";
 
 const HYPE_TOKEN_ABI = [
@@ -198,92 +198,96 @@ const TokenDetailPage = () => {
   return (
     <div>
       <Header />
-        <button className="go-back" onClick={() => window.history.back()}>
-          [go back]
-        </button>
+  
       <div className="token-page-container">
-        {/* Left: Trade Section */}
-        <div className="trade-section">
-          <div className="trade-box">
-            {/* Buy/Sell Toggle Buttons */}
-            <div className="trade-buttons">
-              <button
-                className={`trade-btn ${tradeType === "buy" ? "active" : ""}`}
-                onClick={() => handleTradeTypeChange("buy")}
-              >
-                Buy
-              </button>
-              <button
-                className={`trade-btn ${tradeType === "sell" ? "active" : ""}`}
-                onClick={() => handleTradeTypeChange("sell")}
-              >
-                Sell
-              </button>
-            </div>
-
-            {/* Input Field */}
-            <div className="trade-input">
-              <label>
-                Amount ({tradeType === "buy" ? "EDU" : token.symbol})
-              </label>
-              <div className="input-wrapper">
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => handleAmountChange(e.target.value)}
-                />
-                <span>{tradeType === "buy" ? "EDU" : token.symbol}</span>
-              </div>
-            </div>
-
-            {/* Real-time Token Calculation */}
-            {tradeType === "buy" && (
-              <p className="calculated-tokens">
-                You will receive: <strong>{calculatedTokens}</strong> {token.symbol}
-              </p>
-            )}
-
-
-            {/* Show Percentage Buttons Only for Sell */}
-            {tradeType === "sell" && (
-              <div className="quick-buttons">
-                <button onClick={() => handlePercentageClick(0)}>Reset</button>
-                <button onClick={() => handlePercentageClick(0.25)}>25%</button>
-                <button onClick={() => handlePercentageClick(0.5)}>50%</button>
-                <button onClick={() => handlePercentageClick(0.75)}>75%</button>
-                <button onClick={() => handlePercentageClick(1)}>100%</button>
-              </div>
-            )}
-
-            {/* Buy/Sell Button */}
-            <button
-              className={`place-trade-btn ${tradeType === "sell" ? "sell" : "buy"}`}
-              onClick={tradeType === "buy" ? handleBuy : handleSell}
-              disabled={isProcessing}
-            >
-              {isProcessing ? "Processing..." : "Place Trade"}
-            </button>
-          </div>
+        {/* Centered Go Back Button */}
+        <div className="go-back-container">
+          <button className="go-back" onClick={() => window.history.back()}>
+            [go back]
+          </button>
         </div>
-
-        {/* Right: Token Details */}
-        <div className="token-details-section">
-          <img src={imageSrc} alt={token.name} className="token-detail-image" />
-          <h2>{token.name} ({token.symbol})</h2>
-          <p>{token.description}</p>
-
-          {/* Bonding Curve Progress */}
-          <div className="progress-section">
-            <p>Bonding Curve Progress: {(token.tokensSold / 800_000_000 * 100).toFixed(2)}%</p>
-            <progress value={token.tokensSold} max="800000000"></progress>
+  
+        <div className="content-wrapper">
+          {/* Left: Trade Section */}
+          <div className="trade-section">
+            <div className="trade-box">
+              {/* Buy/Sell Toggle Buttons */}
+              <div className="trade-buttons">
+                <button
+                  className={`trade-btn ${tradeType === "buy" ? "active" : ""}`}
+                  onClick={() => handleTradeTypeChange("buy")}
+                >
+                  Buy
+                </button>
+                <button
+                  className={`trade-btn ${tradeType === "sell" ? "active" : ""}`}
+                  onClick={() => handleTradeTypeChange("sell")}
+                >
+                  Sell
+                </button>
+              </div>
+  
+              {/* Input Field */}
+              <div className="trade-input">
+                <label>
+                  Amount ({tradeType === "buy" ? "EDU" : token.symbol})
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(e) => handleAmountChange(e.target.value)}
+                  />
+                  <span>{tradeType === "buy" ? "EDU" : token.symbol}</span>
+                </div>
+              </div>
+  
+              {/* Real-time Token Calculation */}
+              {tradeType === "buy" && (
+                <p className="calculated-tokens">
+                  You will receive: <strong>{calculatedTokens}</strong> {token.symbol}
+                </p>
+              )}
+  
+              {/* Percentage Buttons for Sell */}
+              {tradeType === "sell" && (
+                <div className="quick-buttons">
+                  <button onClick={() => handlePercentageClick(0)}>Reset</button>
+                  <button onClick={() => handlePercentageClick(0.25)}>25%</button>
+                  <button onClick={() => handlePercentageClick(0.5)}>50%</button>
+                  <button onClick={() => handlePercentageClick(0.75)}>75%</button>
+                  <button onClick={() => handlePercentageClick(1)}>100%</button>
+                </div>
+              )}
+  
+              {/* Buy/Sell Button */}
+              <button
+                className={`place-trade-btn ${tradeType === "sell" ? "sell" : "buy"}`}
+                onClick={tradeType === "buy" ? handleBuy : handleSell}
+                disabled={isProcessing}
+              >
+                {isProcessing ? "Processing..." : "Place Trade"}
+              </button>
+            </div>
+          </div>
+  
+          {/* Right: Token Details */}
+          <div className="token-details-section">
+            <img src={imageSrc} alt={token.name} className="token-detail-image" />
+            <h2>{token.name} ({token.symbol})</h2>
+            <p>{token.description}</p>
+  
+            {/* Bonding Curve Progress */}
+            <div className="progress-section">
+              <p>Bonding Curve Progress: {(token.tokensSold / 800_000_000 * 100).toFixed(2)}%</p>
+              <progress value={token.tokensSold} max="800000000"></progress>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-
-
 };
 
 export default TokenDetailPage;

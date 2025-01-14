@@ -87,6 +87,12 @@
   transition: color 0.3s ease;
 }
 
+
+
+.nav-btn:hover {
+  background-color: rgba(56, 189, 248, 0.2);
+  transform: scale(1.05);
+}
 /* Remove Unnecessary Borders and Shadows */
 * {
   border: none !important;

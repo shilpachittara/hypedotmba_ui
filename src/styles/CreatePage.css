@@ -1,44 +1,53 @@
-/* Center the entire form on the page */
+/* Page Background */
 .page-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh; /* Full viewport height */
-  background-color: #0d0d0d;
-  padding: 20px; /* Avoid overlapping the header */
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #1e3a8a, #0a0a0a);
+  padding: 40px 20px;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  margin-top: 100px;
 }
 
-/* Form styling with increased width */
+/* Glassmorphism Form */
 .create-form {
-  width: 600px; /* Increased width from 400px to 600px */
-  background-color: #1a1a1a;
-  padding: 40px 50px; /* More padding for better spacing */
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  width: 600px;
+  background: rgba(30, 30, 30, 0.7);
+  backdrop-filter: blur(15px);
+  padding: 40px 50px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   gap: 20px;
-  border: 1px solid #333;
-  justify-content: center;
 }
 
 /* Input and Textarea Fields */
 .create-form input,
 .create-form textarea {
   width: 100%;
-  padding: 12px;
-  background-color: #262626;
+  padding: 15px;
+  background-color: rgba(38, 38, 38, 0.9);
   border: 1px solid #444;
-  border-radius: 5px;
+  border-radius: 8px;
   color: #ffffff;
-  font-size: 15px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
 }
 
 .create-form input::placeholder,
 .create-form textarea::placeholder {
   color: #888888;
-  font-size: 14px;
+}
+
+.create-form input:focus,
+.create-form textarea:focus {
+  border-color: #38bdf8;
+  outline: none;
 }
 
 /* File Upload Section */
@@ -48,92 +57,93 @@
   align-items: center;
   justify-content: center;
   border: 2px dashed #444;
-  background-color: #262626;
-  padding: 25px;
-  border-radius: 5px;
+  background-color: rgba(38, 38, 38, 0.9);
+  padding: 30px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
+.file-upload:hover {
+  transform: scale(1.02);
+  border-color: #38bdf8;
+}
 
 .upload-icon {
-    color: #888;
-    margin-bottom: 10px;
-  }
-
-  
-  .select-file-btn {
-    background-color: #444;
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    margin-top: 12px;
-  }
-  
-  .select-file-btn:hover {
-    background-color: #555;
-  }
-  
-.file-upload p {
-  margin-top: 10px;
-  font-size: 14px;
-  color: #aaaaaa;
+  color: #38bdf8;
+  margin-bottom: 15px;
 }
 
-.file-upload button {
-  background-color: #444;
-  color: #fff;
-  padding: 10px 18px;
-  border-radius: 4px;
+.select-file-btn {
+  background-color: #10b981;
+  color: #ffffff;
+  padding: 10px 25px;
+  border-radius: 25px;
   border: none;
   cursor: pointer;
-  margin-top: 12px;
+  font-weight: bold;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.file-upload button:hover {
-  background-color: #555;
+.select-file-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0px 4px 15px rgba(16, 185, 129, 0.4);
 }
 
 /* Show More Options */
 .show-more {
   text-align: center;
-  color: #00ff99;
+  color: #38bdf8;
   cursor: pointer;
   font-weight: bold;
-  font-size: 14px;
+  transition: color 0.3s ease;
 }
 
 .show-more:hover {
-  text-decoration: underline;
+  color: #10b981;
 }
 
 /* More Options Section */
 .more-options {
-  background-color: #262626;
+  background-color: rgba(38, 38, 38, 0.9);
   padding: 20px;
-  border-radius: 5px;
+  border-radius: 8px;
   border: 1px solid #444;
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
 
-/* Create Coin Button */
+/* Create Button */
 .create-btn {
-  background-color: #1e90ff;
+  background-color: #38bdf8;
   color: #ffffff;
-  padding: 12px;
-  border-radius: 5px;
+  padding: 15px;
+  border-radius: 25px;
   cursor: pointer;
   font-weight: bold;
   font-size: 18px;
   border: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.create-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+}
+
+.create-btn.disabled {
+  background-color: #555;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 
-.create-btn:hover {
-  background-color: #187bcd;
+/* Error Message */
+.error-message {
+  color: #ef4444;
+  font-weight: bold;
+  text-align: center;
 }
 
 /* Info Text */
@@ -143,38 +153,3 @@
   margin-top: 10px;
   color: #888;
 }
-
-  /* Go Back Button */
-  .go-back {
-    color: #ffffff;
-    background: none;
-    border: none;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-bottom: 20px;
-  }
-  
-  .go-back:hover {
-    text-decoration: underline;
-  }
-  
-  /* Disabled Button */
-.create-btn.disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-    color: #666;
-  }
-  
-  /* Enabled Button */
-  .create-btn.enabled {
-    background-color: #007bff;
-    cursor: pointer;
-    color: white;
-  }
-  
-  .error-message {
-    color: red;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
