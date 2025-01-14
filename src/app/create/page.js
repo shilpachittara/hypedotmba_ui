@@ -38,6 +38,7 @@ const CreatePage = () => {
   const [telegram, setTelegram] = useState("");
   const [website, setWebsite] = useState("");
   const [twitter, setTwitter] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const { provider, connected, account } = useWallet();
 
@@ -87,6 +88,7 @@ const CreatePage = () => {
     try {
       setIsLoading(true);
       setErrorMessage("");
+      setSuccessMessage("");
 
       const imageUrl = await uploadImageToS3(file);      
 
@@ -96,7 +98,7 @@ const CreatePage = () => {
       const tx = await contract.createToken(name, ticker, description, imageUrl, twitter, telegram, website);
       await tx.wait();
 
-      alert("🎉 Token Created Successfully!");
+      setSuccessMessage("🎉 Token Created Successfully!");
     } catch (error) {
       console.error("Error creating token:", error);
       setErrorMessage("❌ Token creation failed. Please try again.");
@@ -176,7 +178,8 @@ const CreatePage = () => {
           )}
 
           {errorMessage && <p className="error-message">{errorMessage}</p>}
-
+          {successMessage && <p className="success-message">{successMessage}</p>}
+          
           <button
             type="submit"
             className={`create-btn ${isFormValid ? "enabled" : "disabled"}`}

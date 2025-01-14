@@ -20,6 +20,7 @@ const EDU_TOKEN_ABI = [
   "function approve(address spender, uint256 amount) public returns (bool)"
 ];
 
+
 const TokenDetailPage = () => {
   const { id } = useParams();  // Token contract address
   const [token, setToken] = useState(null);
@@ -31,6 +32,17 @@ const TokenDetailPage = () => {
   const { provider, account, connected } = useWallet();
   const [currentPrice, setCurrentPrice] = useState("0.0");
   const [calculatedTokens, setCalculatedTokens] = useState("0.0");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // 🚀 Handle Buy/Sell Button State
+  const isTradeButtonDisabled = !connected || isProcessing || !amount || parseFloat(amount) <= 0;
+
+  const tradeButtonMessage = !connected
+    ? "🔌 Please connect your wallet to place a trade."
+    : !amount || parseFloat(amount) <= 0
+      ? "❌ Invalid input. Please enter a valid amount."
+      : "";
 
   // Load token data and set provider
   useEffect(() => {
@@ -40,6 +52,7 @@ const TokenDetailPage = () => {
         setToken(tokenData);
         if (connected) {
           fetchBalanceAndPrice(tokenData);
+          setErrorMessage("");
         }
         setLoading(false);
       }
@@ -87,7 +100,8 @@ const TokenDetailPage = () => {
     if (tradeType === "buy" && currentPrice > 0) {
       const eduAmount = ethers.parseUnits(value || "0", "ether");
       const priceInWei = ethers.parseUnits(currentPrice.toString(), "ether");
-      const tokens = eduAmount / priceInWei;
+      const tokens = Number(eduAmount) / Number(priceInWei);
+      console.log(eduAmount, priceInWei, tokens)
       setCalculatedTokens(Number(tokens).toFixed(4));
 
     } else if (tradeType === "sell") {
@@ -105,17 +119,19 @@ const TokenDetailPage = () => {
   // Handle Buy Transaction
   const handleBuy = async () => {
     if (!connected) {
-      alert("Please connect your wallet.");
+      setErrorMessage("Please connect your wallet.");
       return;
     }
 
     if (!amount || parseFloat(amount) <= 0) {
-      alert("Please enter a valid amount.");
+      setErrorMessage("Please enter a valid amount.");
       return;
     }
 
     try {
       setIsProcessing(true);
+      setErrorMessage("");
+      setSuccessMessage("");
 
       const signer = await provider.getSigner();
 
@@ -138,10 +154,10 @@ const TokenDetailPage = () => {
       const buyTx = await tokenContract.buyTokens(eduAmountInWei);
       await buyTx.wait();
 
-      alert("Purchase successful!");
+      setSuccessMessage("Purchase successful!");
     } catch (error) {
       console.error("Error during purchase:", error);
-      alert("Transaction failed. Please try again.");
+      setErrorMessage("Transaction failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -150,22 +166,25 @@ const TokenDetailPage = () => {
   // Handle Sell Transaction
   const handleSell = async () => {
     if (!connected) {
-      alert("Please connect your wallet.");
+      setErrorMessage("Please connect your wallet.");
       return;
     }
 
     if (!amount || parseFloat(amount) <= 0) {
-      alert("Please enter a valid amount.");
+      setErrorMessage("Please enter a valid amount.");
       return;
     }
 
     if (parseFloat(amount) > parseFloat(balance)) {
-      alert("You don't have enough tokens to sell.");
+      setErrorMessage("You don't have enough tokens to sell.");
       return;
     }
 
     try {
       setIsProcessing(true);
+      setErrorMessage("");
+      setSuccessMessage("");
+
       const signer = await provider.getSigner();
 
       const tokenContract = new ethers.Contract(id, HYPE_TOKEN_ABI, signer);
@@ -174,13 +193,13 @@ const TokenDetailPage = () => {
       const tx = await tokenContract.sellTokens(tokenAmountInWei);
       await tx.wait();
 
-      alert("Sell successful!");
+      setSuccessMessage("Sell successful!");
 
       // Refresh the user's balance after selling
       await fetchUserTokenBalance();
     } catch (error) {
       console.error("Error during sale:", error);
-      alert("Transaction failed. Please try again.");
+      setErrorMessage("Transaction failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -198,7 +217,7 @@ const TokenDetailPage = () => {
   return (
     <div>
       <Header />
-  
+
       <div className="token-page-container">
         {/* Centered Go Back Button */}
         <div className="go-back-container">
@@ -206,7 +225,7 @@ const TokenDetailPage = () => {
             [go back]
           </button>
         </div>
-  
+
         <div className="content-wrapper">
           {/* Left: Trade Section */}
           <div className="trade-section">
@@ -226,7 +245,7 @@ const TokenDetailPage = () => {
                   Sell
                 </button>
               </div>
-  
+
               {/* Input Field */}
               <div className="trade-input">
                 <label>
@@ -242,14 +261,14 @@ const TokenDetailPage = () => {
                   <span>{tradeType === "buy" ? "EDU" : token.symbol}</span>
                 </div>
               </div>
-  
+
               {/* Real-time Token Calculation */}
               {tradeType === "buy" && (
                 <p className="calculated-tokens">
                   You will receive: <strong>{calculatedTokens}</strong> {token.symbol}
                 </p>
               )}
-  
+
               {/* Percentage Buttons for Sell */}
               {tradeType === "sell" && (
                 <div className="quick-buttons">
@@ -260,7 +279,8 @@ const TokenDetailPage = () => {
                   <button onClick={() => handlePercentageClick(1)}>100%</button>
                 </div>
               )}
-  
+
+            
               {/* Buy/Sell Button */}
               <button
                 className={`place-trade-btn ${tradeType === "sell" ? "sell" : "buy"}`}
@@ -269,15 +289,19 @@ const TokenDetailPage = () => {
               >
                 {isProcessing ? "Processing..." : "Place Trade"}
               </button>
+              {successMessage && <p className="success-message">{successMessage}</p>}
+              {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+              {tradeButtonMessage && <p className="error-message">{tradeButtonMessage}</p>}
             </div>
           </div>
-  
+
           {/* Right: Token Details */}
           <div className="token-details-section">
             <img src={imageSrc} alt={token.name} className="token-detail-image" />
             <h2>{token.name} ({token.symbol})</h2>
             <p>{token.description}</p>
-  
+
             {/* Bonding Curve Progress */}
             <div className="progress-section">
               <p>Bonding Curve Progress: {(token.tokensSold / 800_000_000 * 100).toFixed(2)}%</p>
