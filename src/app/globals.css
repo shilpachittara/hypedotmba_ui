@@ -7,9 +7,9 @@
 :root {
   --primary-color: #4f46e5;
   --secondary-color: #22d3ee;
-  --background-gradient: radial-gradient(circle at top, #1e3a8a, #0a0a0a);
+  --background-gradient: radial-gradient(circle at top, #0d707f, #0b205a);
   --foreground: #ffffff;
-  --accent: #1e293b;
+  --accent: #142a4c;
   --highlight: #4ade80;
   --danger: #ef4444;
 }
