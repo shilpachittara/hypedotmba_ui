@@ -40,10 +40,11 @@
 }
 
 .token-card:hover .token-image {
-    box-shadow: 0 0 18px rgba(147, 51, 234, 0.8); /* Purple glow */
+    box-shadow: 0 0 18px rgba(147, 51, 234, 0.8);
+    /* Purple glow */
     transform: scale(1.05);
-  }
-  
+}
+
 /* Right: Token Details */
 .token-details {
     display: flex;
@@ -105,4 +106,14 @@
     .token-title {
         font-size: 1.2rem;
     }
+}
+
+.creator {
+    position: relative;
+    cursor: pointer;
+    text-decoration: underline dotted;
+}
+
+.creator:hover {
+    text-decoration: underline solid;
 }

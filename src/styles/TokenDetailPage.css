@@ -116,31 +116,253 @@
 
 /* Token Details Section */
 .token-details-section {
-  width: 45%;
-  background-color: rgba(9, 18, 62, 0.8);
+  width: 80%;
   padding: 25px;
   border-radius: 15px;
+  font-size: small;
 }
 
 .token-detail-image {
-  width: 100px;
-  height: 100px;
+  width: 150px;
+  height: 150px;
   margin-bottom: 15px;
   border-radius: 10px;
   background-color: aliceblue;
 }
 
 .progress-section progress {
-  width: 100%;
+  width: 80%;
   height: 8px;
-  border-radius: 20%;
-  background-color: #334155;
+  border-radius: 10px; /* Round corners */
+  overflow: hidden; /* Clip the inner progress value to follow the border radius */
+  appearance: none; /* Remove default styling */
 }
 
+progress {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+progress::-webkit-progress-bar {
+  background-color: #334155; /* Background for the progress bar */
+  border-radius: 10px;
+}
+
+progress::-webkit-progress-value {
+  background-color: #0d707f; /* Color of the filled progress */
+  border-radius: 10px;
+}
+
+progress::-moz-progress-bar {
+  background-color: #0d707f; /* For Firefox */
+  border-radius: 10px;
+}
 
 /* Disabled Button */
 .place-trade-btn:disabled {
   background-color: #9ca3af;
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.token-page-container {
+  padding: 20px;
+}
+
+.content-wrapper {
+  display: flex;
+  gap: 20px;
+}
+
+.left-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.right-section {
+  flex: 0.8;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+
+.chart-container {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 10px;
+  background: linear-gradient(to bottom, #0f172a, #1e293b); /* Dark gradient */
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.chart-container h3 {
+  margin-bottom: 10px;
+  color: #ffffff;
+  font-size: 16px;
+  text-align: left;
+  font-weight: 600;
+}
+
+canvas {
+  border-radius: 8px;
+}
+
+.legend-container {
+  margin-top: 10px;
+  text-align: right;
+  color: #9ca3af; /* Light gray for the legend */
+  font-size: 12px;
+}
+.trade-section {
+  width: 80%;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: small;
+}
+.holders-container {
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: small;
+}
+
+.trade-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.trade-btn {
+  flex: 1;
+  padding: 10px;
+  cursor: pointer;
+  border: none;
+  background: #007bff;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.trade-btn.active {
+  background: #0056b3;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.place-trade-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: #28a745;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.place-trade-btn.sell {
+  background: #dc3545;
+}
+
+
+
+.creator-address {
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+
+.progress-section {
+  margin-top: 10px;
+}
+
+.holders-container {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+
+.token-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.details-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.token-image-container {
+  flex-shrink: 0;
+}
+
+.token-detail-image {
+  width: 100px; /* Adjust size as needed */
+  height: 100px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.token-text-details {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.additional-details {
+  margin-top: 0.5rem;
+}
+
+
+/* Spinner Container */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #0f172a; /* Match the app's dark theme */
+  color: #ffffff;
+  font-size: 18px;
+}
+
+/* Spinner Animation */
+.spinner {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.double-bounce1,
+.double-bounce2 {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #22c55e; /* Green color */
+  opacity: 0.6;
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation: bounce 2s infinite ease-in-out;
+}
+
+.double-bounce2 {
+  animation-delay: -1s;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1);
+  }
 }

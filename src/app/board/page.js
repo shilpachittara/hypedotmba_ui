@@ -5,13 +5,13 @@ import TokenCard from "../../components/TokenCard";
 import { fetchTokens } from "../../utils/_api";
 import Header from "@/components/Header";
 import { useRouter } from "next/navigation";
-import "../../styles/BoardPage.css"; 
+import "../../styles/BoardPage.css";
 
 const BoardPage = () => {
   const router = useRouter();
-
   const [tokens, setTokens] = useState([]);
   const [search, setSearch] = useState("");
+  const [sortOption, setSortOption] = useState("volume24h");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -25,9 +25,16 @@ const BoardPage = () => {
     loadTokens();
   }, []);
 
-  const filteredTokens = tokens.filter((token) =>
-    token.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredTokens = tokens
+    .filter((token) =>
+      token.name.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortOption === "volume24h") return b.dailyVolume - a.dailyVolume;
+      if (sortOption === "volume7dChange") return b.volume7dChange - a.volume7dChange;
+      if (sortOption === "marketCap") return b.marketCap - a.marketCap;
+      return 0;
+    });
 
   const handleStartNewCoin = () => {
     router.push("/create");
@@ -54,6 +61,21 @@ const BoardPage = () => {
           className="search-bar"
         />
         <button className="search-btn">search</button>
+      </div>
+
+      {/* Sort Options */}
+      <div className="sort-container">
+        <label htmlFor="sort">Sort By:</label>
+        <select
+          id="sort"
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value)}
+          className="sort-select"
+        >
+          <option value="volume24h">Volume (24h)</option>
+          <option value="volume7dChange">7d % Change</option>
+          <option value="marketCap">Market Cap</option>
+        </select>
       </div>
 
       {/* Token Cards */}

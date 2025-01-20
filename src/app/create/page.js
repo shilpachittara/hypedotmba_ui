@@ -8,7 +8,7 @@ import { ethers } from "ethers";
 import "../../styles/CreatePage.css";
 import { useWallet } from "@/context/WalletContext";
 
-const CONTRACT_ADDRESS = "0x3Ed72eaaB159e945a53a07A6F95608e80A66664e";
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const CONTRACT_ABI = [
   {
     "inputs": [
