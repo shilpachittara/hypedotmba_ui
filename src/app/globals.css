@@ -3,15 +3,48 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global Theme */
+/* Global CSS Variables - Color Theme */
 :root {
-  --primary-color: #4f46e5;
-  --secondary-color: #22d3ee;
-  --background-gradient: radial-gradient(circle at top, #0d707f, #0b205a);
-  --foreground: #ffffff;
-  --accent: #142a4c;
-  --highlight: #4ade80;
-  --danger: #ef4444;
+  /* Base Colors */
+  --bg-primary: #0A0F15;  /* Dark background */
+  --bg-secondary: #111A21; /* Slightly lighter dark */
+  
+  /* Green Accent Colors */
+  --accent-primary: #00F6AA;  /* Bright neon green */
+  --accent-secondary: #0A3F2E; /* Darker green */
+  --accent-gradient: linear-gradient(135deg, #00F6AA 0%, #027A54 100%);
+  
+  /* Text Colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: #94A3B8;
+  --text-accent: #00F6AA;
+  
+  /* Card Colors */
+  --card-bg: rgba(16, 24, 32, 0.8);
+  --card-border: rgba(255, 255, 255, 0.05);
+  --card-hover: rgba(20, 30, 40, 0.9);
+  
+  /* Glass Effect */
+  --glass-bg: rgba(16, 24, 32, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 246, 170, 0.1);
+  
+  /* Shadows & Glows */
+  --glow-green: 0 0 20px rgba(0, 246, 170, 0.5);
+  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  
+  /* Button Colors */
+  --button-bg: rgba(0, 246, 170, 0.1);
+  --button-border: rgba(0, 246, 170, 0.2);
+  --button-hover: rgba(0, 246, 170, 0.2);
+}
+
+/* Basic reset and background */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
 }
 
 /* Global Reset */
@@ -22,8 +55,6 @@
 }
 
 body {
-  background: var(--background-gradient);
-  color: var(--foreground);
   font-family: "Poppins", sans-serif;
   overflow-x: hidden;
 }
