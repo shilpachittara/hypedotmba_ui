@@ -37,6 +37,11 @@
   --button-bg: rgba(0, 246, 170, 0.1);
   --button-border: rgba(0, 246, 170, 0.2);
   --button-hover: rgba(0, 246, 170, 0.2);
+  
+  /* Radii */
+  --radius-full: 9999px;
+  --radius-lg: 24px;
+  --radius-md: 16px;
 }
 
 /* Basic reset and background */
