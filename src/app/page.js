@@ -158,6 +158,7 @@ export default function Home() {
           <h2 className="section-title">
             Why <span className="gradient-text">Hype.mba</span>?
           </h2>
+          <h3>Hype.mba empowers creators and communities to easily <span className="gradient-text"> launch their tokens, gather liquidity, and unlock value.</span> Once  <span className="gradient-text">liquidity reaches the threshold</span>, your token is automatically launched on the <span className="gradient-text">Sailfish DEX.</span></h3>
           
           <div className="features-grid">
             <div className="feature-card">
