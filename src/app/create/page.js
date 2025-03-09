@@ -114,28 +114,103 @@ const CreatePage = () => {
     setShowMore(!showMore);
     
     // Wait for expansion animation to complete
-    setTimeout(() => {
-      if (!showMore && bottomSectionRef.current) {
-        bottomSectionRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
-      }
-    }, 300); // Timing aligned with expansion animation
+    // setTimeout(() => {
+    //   if (!showMore && bottomSectionRef.current) {
+    //     bottomSectionRef.current.scrollIntoView({
+    //       behavior: 'smooth',
+    //       block: 'center'
+    //     });
+    //   }
+    // }, 300); // Timing aligned with expansion animation
   };
 
   return (
     <div>
       <Header />
       <div className="page-container">
+        {/* Background effects */}
+        <div className="background-effects">
+          <div className="grid-lines" />
+          
+          {/* Glow spots */}
+          <div className="glow-spot" style={{ 
+            top: '20%', 
+            left: '20%',
+            animationDelay: '0s'
+          }} />
+          <div className="glow-spot" style={{ 
+            top: '60%', 
+            right: '25%',
+            animationDelay: '-5s'
+          }} />
+          
+          {/* Background particles */}
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={`particle-${i}`}
+              className="bg-particle"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                opacity: Math.random() * 0.5 + 0.3,
+                transform: `scale(${Math.random() * 1.5 + 0.5})`
+              }}
+            />
+          ))}
+        </div>
+
         <button className="go-back" onClick={() => window.history.back()}>
           [go back]
         </button>
 
         <form className="create-form" onSubmit={handleSubmit}>
+          {/* Outer border effects */}
+          <div className="form-border-effects">
+            <div className="border-trace">
+              {/* Data flow lines */}
+              <div className="data-line data-line-h data-line-1" />
+              <div className="data-line data-line-h data-line-2" />
+              <div className="data-line data-line-h data-line-3" />
+              <div className="data-line data-line-v data-line-4" />
+              <div className="data-line data-line-v data-line-5" />
+              <div className="data-line data-line-h data-line-6" />
+              <div className="data-line data-line-h data-line-7" />
+              <div className="data-line data-line-v data-line-8" />
+              <div className="data-line data-line-v data-line-9" />
+            </div>
+            
+            {/* Cyber corners */}
+            <div className="cyber-corner corner-tl" />
+            <div className="cyber-corner corner-tr" />
+            <div className="cyber-corner corner-bl" />
+            <div className="cyber-corner corner-br" />
+            
+            {/* Energy field */}
+            <div className="energy-field" />
+          </div>
+
           <div className="form-content">
             <div className="form-sections">
-              <h1 className="form-title">Create Your Token</h1>
+              <h1 className="form-title">
+                <span className="form-title-icon">⟠</span>
+                <span className="form-title-text">Create Your Token</span>
+                <span className="form-title-icon">₿</span>
+                
+                {/* Crypto particles */}
+                <div className="crypto-particles">
+                  {[...Array(10)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="particle"
+                      style={{
+                        left: `${Math.random() * 100}%`,
+                        top: `${Math.random() * 100}%`,
+                        animationDelay: `${Math.random() * 2}s`
+                      }}
+                    />
+                  ))}
+                </div>
+              </h1>
               
               <div className="main-fields">
                 {/* Name and Symbol inputs */}
