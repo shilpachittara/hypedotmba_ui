@@ -43,6 +43,8 @@ const CreatePage = () => {
   const { provider, connected, account } = useWallet();
 
   const fileInputRef = useRef(null);
+  const expandableRef = useRef(null);
+  const bottomSectionRef = useRef(null);
 
   // ✅ Form Validation: All required fields must be filled, and wallet connected
   const isFormValid = name && ticker && description && file && account;
@@ -107,7 +109,20 @@ const CreatePage = () => {
     }
   };
 
-
+  // Function to handle smooth scroll to bottom content
+  const handleShowMore = () => {
+    setShowMore(!showMore);
+    
+    // Wait for expansion animation to complete
+    setTimeout(() => {
+      if (!showMore && bottomSectionRef.current) {
+        bottomSectionRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    }, 300); // Timing aligned with expansion animation
+  };
 
   return (
     <div>
@@ -118,79 +133,131 @@ const CreatePage = () => {
         </button>
 
         <form className="create-form" onSubmit={handleSubmit}>
+          <div className="form-content">
+            <div className="form-sections">
+              <h1 className="form-title">Create Your Token</h1>
+              
+              <div className="main-fields">
+                {/* Name and Symbol inputs */}
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Token Name</label>
+                    <div className="input-wrapper">
+                      <input 
+                        type="text" 
+                        value={name} 
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Enter token name"
+                        maxLength={50}
+                      />
+                      <span className="char-counter">{name.length}/50</span>
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Token Symbol</label>
+                    <div className="input-wrapper">
+                      <input 
+                        type="text" 
+                        value={ticker} 
+                        onChange={(e) => setTicker(e.target.value.toUpperCase())}
+                        maxLength={5}
+                        placeholder="e.g. BTC"
+                      />
+                      <span className="char-counter">{ticker.length}/5</span>
+                    </div>
+                  </div>
+                </div>
 
-          <label>name</label>
-          <input
-            type="text"
-            placeholder="Token Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
+                {/* Description and Upload row */}
+                <div className="description-upload-row">
+                  <div className="form-group description-group">
+                    <label>Description</label>
+                    <div className="input-wrapper">
+                      <textarea 
+                        value={description} 
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Describe your token..."
+                        maxLength={500}
+                      />
+                      <span className="char-counter">{description.length}/500</span>
+                    </div>
+                  </div>
 
-          <label>ticker</label>
-          <input
-            type="text"
-            placeholder="$"
-            value={ticker}
-            onChange={(e) => setTicker(e.target.value.toUpperCase())}
-            maxLength={5}
-            required
-          />
+                  <div className="form-group">
+                    <label>Token Image</label>
+                    <div 
+                      className="file-upload" 
+                      onClick={() => document.getElementById('file-input').click()}
+                    >
+                      <div className="upload-icon">
+                        {file ? '📎' : '📤'}
+                      </div>
+                      {file ? (
+                        <p className="file-name">{file.name}</p>
+                      ) : (
+                        <p>Drop image or click to browse</p>
+                      )}
+                      <input 
+                        id="file-input"
+                        type="file"
+                        hidden
+                        onChange={(e) => setFile(e.target.files[0])}
+                        accept="image/*,video/*"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-          <label>description</label>
-          <textarea
-            placeholder="Describe your token..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows="4"
-            required
-          />
+              <div className="button-sections">
+                <div className="show-more-section">
+                  <button 
+                    type="button"
+                    className="show-more-btn"
+                    onClick={handleShowMore}
+                  >
+                    {showMore ? 'Show Less' : 'Show More Options'} 
+                    <span>{showMore ? '↑' : '↓'}</span>
+                  </button>
+                </div>
 
-          <label>image or video</label>
-          <div className="file-upload">
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: "none" }}
-              onChange={handleFileChange}
-            />
-            <FontAwesomeIcon icon={faUpload} size="3x" className="upload-icon" />
-            <p>{file ? file.name : "drag and drop an image or video"}</p>
-            <button type="button" onClick={handleSelectFileClick} className="select-file-btn">
-              select file
-            </button>
-          </div>
+                <div className={`expandable-content ${showMore ? 'expanded' : ''}`}>
+                  <div className="optional-fields-grid">
+                    <div className="form-group">
+                      <label>Telegram Link</label>
+                      <div className="input-wrapper">
+                        <input type="text" placeholder="https://t.me/..." />
+                      </div>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Website</label>
+                      <div className="input-wrapper">
+                        <input type="text" placeholder="https://..." />
+                      </div>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Twitter</label>
+                      <div className="input-wrapper">
+                        <input type="text" placeholder="https://twitter.com/..." />
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-          <p className="show-more" onClick={() => setShowMore(!showMore)}>
-            {showMore ? "hide more options ↑" : "show more options ↓"}
-          </p>
-
-          {showMore && (
-            <div className="more-options">
-              <label>Telegram</label>
-              <input type="text" placeholder="Telegram link" value={telegram} onChange={(e) => setTelegram(e.target.value)} />
-              <label>Website</label>
-              <input type="text" placeholder="Website link" value={website} onChange={(e) => setWebsite(e.target.value)} />
-              <label>Twitter</label>
-              <input type="text" placeholder="Twitter link" value={twitter} onChange={(e) => setTwitter(e.target.value)} />
+                <div className="bottom-section" ref={bottomSectionRef}>
+                  <button type="submit" className="create-btn">
+                    Create Token
+                  </button>
+                  <p className="info-text">
+                    When your coin completes its bonding curve you receive <span>5 EDU</span>
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
-
-          {errorMessage && <p className="error-message">{errorMessage}</p>}
-          {successMessage && <p className="success-message">{successMessage}</p>}
-          
-          <button
-            type="submit"
-            className={`create-btn ${isFormValid ? "enabled" : "disabled"}`}
-            disabled={!isFormValid || isLoading}
-          >
-            {isLoading ? "Creating..." : "create coin"}
-          </button>
-
-          <p className="info-text">
-            when your coin completes its bonding curve you receive 5 EDU
-          </p>
+          </div>
         </form>
       </div>
     </div>
