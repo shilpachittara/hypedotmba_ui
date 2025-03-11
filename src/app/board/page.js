@@ -10,7 +10,7 @@ import "../../styles/BoardPage.css";
 const BoardPage = () => {
   const router = useRouter();
   const [tokens, setTokens] = useState([]);
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("volume24h");
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +18,6 @@ const BoardPage = () => {
     const loadTokens = async () => {
       setLoading(true);
       const data = await fetchTokens();
-      setTokens(data);
       setLoading(false);
     };
 
@@ -27,7 +26,7 @@ const BoardPage = () => {
 
   const filteredTokens = tokens
     .filter((token) =>
-      token.name.toLowerCase().includes(search.toLowerCase())
+      token.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
       if (sortOption === "volume24h") return b.dailyVolume - a.dailyVolume;
@@ -36,46 +35,72 @@ const BoardPage = () => {
       return 0;
     });
 
-  const handleStartNewCoin = () => {
-    router.push("/create");
+  const handleSortChange = (e) => {
+    setSortOption(e.target.value);
+  };
+
+  const currentSort = sortOption;
+
+  const handleSearch = (term) => {
+    // Implement search functionality
+    console.log("Searching for:", term);
   };
 
   return (
     <div className="board-container">
       <Header />
 
-      {/* Start a New Coin */}
-      <section className="start-coin">
-        <button onClick={handleStartNewCoin} className="start-coin-btn">
-          [start a new coin]
-        </button>
-      </section>
+      {/* Board Controls */}
+      <div className="board-controls">
+        {/* Create Button - Top Center */}
+        <div className="create-section">
+          <button
+            className="create-coin-btn"
+            onClick={() => router.push('/create')}
+          >
+            <span>Create New Coin</span>
+          </button>
+        </div>
 
-      {/* Search Bar */}
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder="search for token"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="search-bar"
-        />
-        <button className="search-btn">search</button>
-      </div>
+        {/* Sort and Search - Bottom Row */}
+        <div className="filters-row">
+          {/* Sort - Left */}
+          <div className="sort-container">
+            <select
+              className="sort-select"
+              onChange={handleSortChange}
+              value={currentSort}
+            >
+              <option value="">Sort By: Default</option>
+              <option value="marketCap">Highest Market Cap</option>
+              <option value="volume">Highest Volume</option>
+              <option value="newest">Recently Added</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+          </div>
 
-      {/* Sort Options */}
-      <div className="sort-container">
-        <label htmlFor="sort">Sort By:</label>
-        <select
-          id="sort"
-          value={sortOption}
-          onChange={(e) => setSortOption(e.target.value)}
-          className="sort-select"
-        >
-          <option value="volume24h">Volume (24h)</option>
-          <option value="volume7dChange">7d % Change</option>
-          <option value="marketCap">Market Cap</option>
-        </select>
+          {/* Search - Right */}
+          <div className="search-container">
+            <div className="search-input-wrapper">
+              <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeWidth="2" />
+              </svg>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search coins..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <button
+              className="search-button"
+              onClick={() => handleSearch(searchTerm)}
+            >
+              Search
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Token Cards */}
