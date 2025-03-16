@@ -349,14 +349,9 @@
 .feature-card {
   flex: 1;
   width:33%; /* Maximum width to maintain proportions */
-  background: linear-gradient(
-    135deg,
-    rgba(0, 246, 170, 0.03) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
+  background: #066e071a;
   border: 1px solid rgba(0, 246, 170, 0.1);
   border-radius: 16px;
-  padding: 2.5rem;
   min-height: 280px;
   position: relative;
   overflow: hidden;
@@ -840,7 +835,7 @@
 }
 
 .hero-glitch .glitch {
-  font-size: 4.2rem;
+  font-size: 3.2rem;
   font-weight: 700;
   color: #00F6AA;
   position: relative;

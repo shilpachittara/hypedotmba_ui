@@ -192,9 +192,7 @@ const CreatePage = () => {
           <div className="form-content">
             <div className="form-sections">
               <h1 className="form-title">
-                <span className="form-title-icon">⟠</span>
                 <span className="form-title-text">Create Your Token</span>
-                <span className="form-title-icon">₿</span>
                 
                 {/* Crypto particles */}
                 <div className="crypto-particles">
@@ -237,7 +235,7 @@ const CreatePage = () => {
                         value={ticker} 
                         onChange={(e) => setTicker(e.target.value.toUpperCase())}
                         maxLength={5}
-                        placeholder="e.g. BTC"
+                        placeholder="e.g. EDC"
                       />
                       <span className="char-counter">{ticker.length}/5</span>
                     </div>

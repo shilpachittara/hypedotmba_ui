@@ -42,7 +42,7 @@ export default function Home() {
       card.addEventListener('mousemove', handleMouseMove);
     });
 
-    const words = ['Create', 'Grow', 'Launch'];
+    const words = [ 'Launch', 'Trade', 'Hype'];
     let wordIndex = 0;
     let charIndex = 0;
     const wordElement = document.querySelector('.word-switch');
@@ -116,8 +116,8 @@ export default function Home() {
         <div className="hero-content fade-in">
           <div className="hero-text">
             <div className="glitch-wrapper hero-glitch">
-              <h1 className="glitch" data-text="Launch Your Token in Seconds">
-                Launch Your Token in Seconds
+          <h1 className="glitch" data-text="Launch Trade & Hype Your Token in Seconds!">
+              Launch Trade & Hype Your Token in Seconds!
               </h1>
             </div>
             <p className="hero-subtitle">
@@ -130,7 +130,7 @@ export default function Home() {
             </p>
             <div className="button-container fade-up">
               <Link href="/create-token" className="neon-button">
-                <span className="button-text">Start Now</span>
+                <span className="button-text">Launch Now</span>
                 <div className="wave-container">
                   <div className="wave"></div>
                 </div>
@@ -158,15 +158,15 @@ export default function Home() {
           <h2 className="section-title">
             Why <span className="gradient-text">Hype.mba</span>?
           </h2>
-          <h3>Hype.mba empowers creators and communities to easily <span className="gradient-text"> launch their tokens, gather liquidity, and unlock value.</span> Once  <span className="gradient-text">liquidity reaches the threshold</span>, your token is automatically launched on the <span className="gradient-text">Sailfish DEX.</span></h3>
+          <h3>Hype.MBA is the ultimate platform where anyone can <span className="gradient-text">launch tokens instantly, trade securely, and build vibrant communities.</span> No private allocations, no insiders—just <span className="gradient-text">fair launches accessible to everyone.</span> You can easily launch your tokens, gather liquidity, and unlock value. Once <span className="gradient-text">liquidity reaches the threshold</span>, your token is automatically launched on the <span className="gradient-text">Sailfish DEX.</span></h3>
           
-          <div className="features-grid">
+          <div className="features-grid four-card-layout">
             <div className="feature-card">
               <div className="feature-content">
                 <div className="feature-header">
                   <div>
-                    <h3 className="feature-title">Instant Launch</h3>
-                    <p className="feature-description">Deploy your token in seconds without coding</p>
+                    <h3 className="feature-title">Instant Launches</h3>
+                    <p className="feature-description">Deploy your token effortlessly in seconds—no coding required!</p>
                   </div>
                   <div className="feature-icon-wrapper">
                     <span className="feature-icon">🚀</span>
@@ -184,8 +184,8 @@ export default function Home() {
               <div className="feature-content">
                 <div className="feature-header">
                   <div>
-                    <h3 className="feature-title">Auto Liquidity</h3>
-                    <p className="feature-description">Liquidity added at $100k market cap</p>
+                    <h3 className="feature-title">Fair Distribution</h3>
+                    <p className="feature-description">No pre-minting, no VCs. Tokens are 100% community-owned.</p>
                   </div>
                   <div className="feature-icon-wrapper">
                     <span className="feature-icon">💧</span>
@@ -202,8 +202,8 @@ export default function Home() {
               <div className="feature-content">
                 <div className="feature-header">
                   <div>
-                    <h3 className="feature-title">Secure & Verified</h3>
-                    <p className="feature-description">Built on reliable smart contracts</p>
+                    <h3 className="feature-title">Seamless Trading</h3>
+                    <p className="feature-description">Immediate on-chain liquidity, allowing instant buying and selling.</p>
                   </div>
                   <div className="feature-icon-wrapper">
                     <span className="feature-icon">🔒</span>
@@ -211,7 +211,25 @@ export default function Home() {
                 </div>
                 <div className="feature-stats">
                   <span className="stat">100%</span>
-                  <span className="stat-label">Safe Launch</span>
+                  <span className="stat-label">Community Driven</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="feature-card">
+              <div className="feature-content">
+                <div className="feature-header">
+                  <div>
+                    <h3 className="feature-title">Community Driven</h3>
+                    <p className="feature-description">Grow your token through transparent and organic hype.</p>
+                  </div>
+                  <div className="feature-icon-wrapper">
+                    <span className="feature-icon">🌐</span>
+                  </div>
+                </div>
+                <div className="feature-stats">
+                  <span className="stat">10k+</span>
+                  <span className="stat-label">Active Users</span>
                 </div>
               </div>
             </div>
@@ -219,13 +237,158 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Enhanced How It Works Section */}
+      <section className="how-it-works-section">
+        <div className="how-it-works-container">
+          <div className="section-header-enhanced">
+            <h2 className="section-heading-enhanced">
+              How It <span className="accent-text-enhanced">Works</span>
+            </h2>
+            <div className="header-decoration">
+              <div className="header-line"></div>
+              <div className="header-dot"></div>
+              <div className="header-line"></div>
+            </div>
+          </div>
+          
+          <div className="steps-container-enhanced">
+            <div className="step-card-enhanced">
+              <div className="step-marker-enhanced">
+                <div className="step-number-enhanced">1</div>
+                <div className="marker-pulse-enhanced"></div>
+              </div>
+              <div className="step-details-enhanced">
+                <div className="step-icon-wrapper">
+                  <div className="step-icon-enhanced">🚀</div>
+                  <div className="icon-highlight"></div>
+                </div>
+                <h3 className="step-title-enhanced">Create Your Token</h3>
+                <p className="step-description-enhanced">Choose your <strong>name</strong>, <strong>symbol</strong>, and <strong>supply</strong>, then deploy in one click.</p>
+              </div>
+              <div className="card-glow-enhanced"></div>
+              <div className="card-decoration">
+                <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 10L50 50" stroke="rgba(0, 246, 170, 0.1)" strokeWidth="2"/>
+                  <path d="M10 50L50 10" stroke="rgba(0, 246, 170, 0.1)" strokeWidth="2"/>
+                </svg>
+              </div>
+            </div>
+            
+            <div className="steps-connector-enhanced">
+              <div className="connector-line-enhanced"></div>
+              <div className="connector-dot-enhanced"></div>
+            </div>
+            
+            <div className="step-card-enhanced">
+              <div className="step-marker-enhanced">
+                <div className="step-number-enhanced">2</div>
+                <div className="marker-pulse-enhanced"></div>
+              </div>
+              <div className="step-details-enhanced">
+                <div className="step-icon-wrapper">
+                  <div className="step-icon-enhanced">💱</div>
+                  <div className="icon-highlight"></div>
+                </div>
+                <h3 className="step-title-enhanced">Start Trading Instantly</h3>
+                <p className="step-description-enhanced">Your token is <strong>immediately listed</strong> with <strong>automatic liquidity</strong>.</p>
+              </div>
+              <div className="card-glow-enhanced"></div>
+              <div className="card-decoration">
+                <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 10L50 50" stroke="rgba(0, 246, 170, 0.1)" strokeWidth="2"/>
+                  <path d="M10 50L50 10" stroke="rgba(0, 246, 170, 0.1)" strokeWidth="2"/>
+                </svg>
+              </div>
+            </div>
+            
+            <div className="steps-connector-enhanced">
+              <div className="connector-line-enhanced"></div>
+              <div className="connector-dot-enhanced"></div>
+            </div>
+            
+            <div className="step-card-enhanced">
+              <div className="step-marker-enhanced">
+                <div className="step-number-enhanced">3</div>
+                <div className="marker-pulse-enhanced"></div>
+              </div>
+              <div className="step-details-enhanced">
+                <div className="step-icon-wrapper">
+                  <div className="step-icon-enhanced">📈</div>
+                  <div className="icon-highlight"></div>
+                </div>
+                <h3 className="step-title-enhanced">Amplify the Hype</h3>
+                <p className="step-description-enhanced">Share with your <strong>community</strong>, build <strong>excitement</strong>, and watch your token take flight!</p>
+              </div>
+              <div className="card-glow-enhanced"></div>
+              <div className="card-decoration">
+                <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 10L50 50" stroke="rgba(0, 246, 170, 0.1)" strokeWidth="2"/>
+                  <path d="M10 50L50 10" stroke="rgba(0, 246, 170, 0.1)" strokeWidth="2"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+           {/* Built for Memes, Degens & Innovators Section */}
+           <section className="audience-section">
+        <div className="audience-container">
+          <div className="audience-header">
+            <h2 className="audience-heading">
+              Built for <span className="highlight-text">Memes, Degens & Innovators</span>
+            </h2>
+          </div>
+          
+          <div className="audience-description">
+            <p>Whether you're launching the next big meme coin, raising funds, or exploring new ideas, Hype.MBA provides a level playing field for everyone to succeed.</p>
+          </div>
+          
+          <div className="audience-tiles">
+            <div className="audience-tile">
+              <div className="tile-icon-container">
+                <span className="tile-icon">🐸</span>
+              </div>
+              <h3 className="tile-title">Meme Lords</h3>
+              <div className="tile-line"></div>
+              <p className="tile-desc">Turn viral content into valuable tokens</p>
+            </div>
+            
+            <div className="audience-tile">
+              <div className="tile-icon-container">
+                <span className="tile-icon">🔥</span>
+              </div>
+              <h3 className="tile-title">Degens</h3>
+              <div className="tile-line"></div>
+              <p className="tile-desc">Trade fast with maximum opportunities</p>
+            </div>
+            
+            <div className="audience-tile">
+              <div className="tile-icon-container">
+                <span className="tile-icon">💡</span>
+              </div>
+              <h3 className="tile-title">Innovators</h3>
+              <div className="tile-line"></div>
+              <p className="tile-desc">Test ideas and build engaged communities</p>
+            </div>
+            
+            <div className="audience-tile">
+              <div className="tile-icon-container">
+                <span className="tile-icon">🌐</span>
+              </div>
+              <h3 className="tile-title">Creators</h3>
+              <div className="tile-line"></div>
+              <p className="tile-desc">Monetize your brand and following</p>
+            </div>
+          </div>
+        </div>
+      </section>
       {/* CTA Section */}
       <section className="cta-section">
         <div className="cta-content fade-in-scroll">
           <div className="futuristic-heading">
             <div className="glitch-wrapper">
-              <h2 className="glitch" data-text="Ready to launch your own token?">
-                Ready to launch your own token?
+              <h2 className="glitch" data-text="Ready to Go Viral?">
+              Ready to Go Viral?
               </h2>
             </div>
             <div className="cyber-dots">
@@ -236,7 +399,7 @@ export default function Home() {
           </div>
           <div className="button-container">
             <button className="neon-button">
-              <span>Start Now</span>
+              <span> Launch Your Token Now!</span>
               <div className="wave-container">
                 <div className="wave"></div>
               </div>
@@ -244,6 +407,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+ 
     </div>
   );
 }

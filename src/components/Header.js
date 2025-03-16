@@ -57,7 +57,7 @@ const Header = () => {
                         </button>
                     ) : (
                         <button onClick={connectWallet} className="book-now-btn">
-                            Book Now
+                            Connect Wallet
                         </button>
                     )}
                 </div>

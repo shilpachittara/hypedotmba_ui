@@ -48,56 +48,92 @@ const BoardPage = () => {
 
   return (
     <div className="board-container">
+      {/* Background Elements - Similar to Home Screen */}
+      <div className="board-background">
+        <div className="grid-background"></div>
+        <div className="glow-orb orb-1"></div>
+        <div className="glow-orb orb-2"></div>
+        <div className="glow-orb orb-3"></div>
+        <div className="grid-overlay"></div>
+      </div>
+
       <Header />
 
-      {/* Board Controls */}
+      {/* Enhanced Board Controls with Lighter Design */}
       <div className="board-controls">
-        {/* Create Button - Top Center */}
-        <div className="create-section">
-          <button
-            className="create-coin-btn"
-            onClick={() => router.push('/create')}
-          >
-            <span>Create New Coin</span>
-          </button>
-        </div>
-
-        {/* Sort and Search - Bottom Row */}
         <div className="filters-row">
-          {/* Sort - Left */}
+          {/* Redesigned Sort Dropdown */}
           <div className="sort-container">
-            <select
-              className="sort-select"
-              onChange={handleSortChange}
-              value={currentSort}
-            >
-              <option value="">Sort By: Default</option>
-              <option value="marketCap">Highest Market Cap</option>
-              <option value="volume">Highest Volume</option>
-              <option value="newest">Recently Added</option>
-              <option value="oldest">Oldest First</option>
-            </select>
+            <div className="futuristic-select-wrapper">
+              <select
+                className="futuristic-select"
+                onChange={handleSortChange}
+                value={currentSort}
+              >
+                <option value="">Sort By: Default</option>
+                <option value="marketCap">Highest Market Cap</option>
+                <option value="volume">Highest Volume</option>
+                <option value="newest">Recently Added</option>
+                <option value="oldest">Oldest First</option>
+              </select>
+              <div className="select-arrow">
+                <svg width="14" height="8" viewBox="0 0 14 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 1L7 7L13 1" stroke="#00F6AA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="select-glow"></div>
+            </div>
           </div>
 
-          {/* Search - Right */}
+          {/* Enhanced Search Container */}
           <div className="search-container">
-            <div className="search-input-wrapper">
-              <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeWidth="2" />
-              </svg>
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Search coins..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="search-wrapper">
+              <div className="search-icon-wrapper">
+                <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" 
+                    stroke="#00F6AA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <div className="pulse-ring"></div>
+              </div>
+              
+              <div className="input-field-wrapper">
+                <input
+                  type="text"
+                  className="enhanced-search-input"
+                  placeholder="Search tokens by name or symbol..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <div className="input-glow"></div>
+                <div className="typing-indicator">
+                  {searchTerm && <span className="typing-dot"></span>}
+                </div>
+              </div>
+              
+              {searchTerm && (
+                <button 
+                  className="clear-search-button"
+                  onClick={() => setSearchTerm('')}
+                  aria-label="Clear search"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="#00F6AA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              )}
             </div>
+            
             <button
-              className="search-button"
+              className="enhanced-search-button"
               onClick={() => handleSearch(searchTerm)}
             >
-              Search
+              <span className="button-text">Search</span>
+              <span className="button-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M13 5L20 12L13 19M4 12H20" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+              <div className="button-glow"></div>
             </button>
           </div>
         </div>
@@ -105,7 +141,10 @@ const BoardPage = () => {
 
       {/* Token Cards */}
       {loading ? (
-        <p className="loading-text">Loading tokens...</p>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading tokens...</p>
+        </div>
       ) : (
         <div className="token-list">
           {filteredTokens.map((token) => (
