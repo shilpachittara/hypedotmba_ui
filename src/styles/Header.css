@@ -34,17 +34,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: rgba(0, 246, 170, 0.1);
-  border-radius: 8px;
-  padding: 4px;
-}
-
-.logo-icon svg {
-  width: 24px;
-  height: 24px;
-  filter: drop-shadow(0 0 8px rgba(0, 246, 170, 0.5));
+  width: 50px;
+  height: 50px;
+  filter: drop-shadow(0 0 2px #00f6a854);
+  object-fit: contain;
+  position: relative;
+  bottom: 1px;
 }
 
 .logo-text {
