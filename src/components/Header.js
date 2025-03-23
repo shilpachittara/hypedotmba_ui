@@ -36,6 +36,11 @@ const Header = () => {
                         <Link href="/create" className={`nav-link ${pathname === '/create' ? 'active' : ''}`}>
                             Create
                         </Link>
+                        {connected && (
+                            <Link href="/dashboard" className={`nav-link ${pathname === '/dashboard' ? 'active' : ''}`}>
+                                Dashboard
+                            </Link>
+                        )}
                         <button 
                             onClick={() => setShowHowItWorks(true)} 
                             className={`nav-link ${pathname === '/faq' ? 'active' : ''}`}
