@@ -129,15 +129,15 @@ export default function Home() {
               </span>
             </p>
             <div className="button-container fade-up">
-              <Link href="/create-token" className="neon-button">
+              <Link href="/create" className="neon-button">
                 <span className="button-text">Launch Now</span>
                 <div className="wave-container">
                   <div className="wave"></div>
                 </div>
               </Link>
-              <button onClick={() => setShowHowItWorks(true)} className="learn-more-button">
+              <Link href="/board" className="learn-more-button">
                 Learn More
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -399,7 +399,10 @@ export default function Home() {
           </div>
           <div className="button-container">
             <button className="neon-button">
+            <Link href="/create" className="cta-button">
+
               <span> Launch Your Token Now!</span>
+              </Link>
               <div className="wave-container">
                 <div className="wave"></div>
               </div>
