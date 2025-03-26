@@ -1,6 +1,9 @@
 import { ethers } from "ethers";
 import axios from 'axios';
 import dotenv from "dotenv";
+import apolloClient from '../lib/apollo-client';
+import { GET_ALL_TOKENS, GET_TOKEN_BY_ADDRESS, GET_TOKEN_HOLDERS, TEST_QUERY, GET_TOKENS_BY_FACTORY } from '../lib/graphql-queries';
+import { gql } from '@apollo/client';
 
 dotenv.config();
 
@@ -8,6 +11,10 @@ const FACTORY_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const FACTORY_CONTRACT_ABI = [
   "function getDeployedTokens() public view returns (address[])"
 ];
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+console.log('API_BASE_URL:', API_BASE_URL);
 
 const HYPE_TOKEN_ABI = [
   "function name() public view returns (string)",
@@ -43,152 +50,211 @@ const fetchEduPrice = async () => {
   }
 };
 
-
 /**
- * Fetch all deployed tokens with enhanced details
+ * Fetch all tokens from the GraphQL API
  * @returns {Array} - List of token details including sorting parameters
  */
 export const fetchTokens = async () => {
   try {
-    if (!window.ethereum) {
-      throw new Error("MetaMask is not installed.");
+    // First test the connection with a simple query
+    const testResult = await apolloClient.query({
+      query: TEST_QUERY,
+      errorPolicy: 'all'
+    });
+    
+    console.log("GraphQL connection test:", testResult);
+    
+    const { data, error } = await apolloClient.query({
+      query: GET_ALL_TOKENS,
+      errorPolicy: 'all'
+    });
+    
+    if (error) {
+      console.error("GraphQL error:", error);
+      throw new Error(`GraphQL error: ${error.message}`);
     }
-
-    const eduPrice = await fetchEduPrice();
-
-    console.log("edu price : ", eduPrice);
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const factoryContract = new ethers.Contract(
-      FACTORY_CONTRACT_ADDRESS,
-      FACTORY_CONTRACT_ABI,
-      provider
-    );
-
-    const deployedTokens = await factoryContract.getDeployedTokens();
-    const tokens = await Promise.all(
-      deployedTokens.map(async (tokenAddress) => {
-        const tokenContract = new ethers.Contract(
-          tokenAddress,
-          HYPE_TOKEN_ABI,
-          provider
-        );
-
-        const [
-          name,
-          symbol,
-          description,
-          image,
-          price,
-          tokensSold,
-          marketCap,
-          dailyVolume,
-          volume7dChange,
-          creator,
-          createdOn
-        ] = await Promise.all([
-          tokenContract.name(),
-          tokenContract.symbol(),
-          tokenContract.description(),
-          tokenContract.image(),
-          tokenContract.getCurrentPrice(),
-          tokenContract.tokensSold(),
-          tokenContract.getMarketCap(),
-          tokenContract.get24HourVolume(),
-          tokenContract.get7DayVolumeChange(),
-          tokenContract.owner(),
-          tokenContract.createdOn()
-        ]);
-        return {
-          id: tokenAddress,
-          name,
-          symbol,
-          description,
-          image,
-          price: ethers.formatEther(price),
-          tokensSold: ethers.formatEther(tokensSold),
-          marketCap: (ethers.formatEther(marketCap) * eduPrice).toFixed(2),
-          dailyVolume: (ethers.formatEther(dailyVolume) * eduPrice).toFixed(2),
-          volume7dChange: (ethers.formatEther(volume7dChange) * eduPrice).toFixed(2),
-          creator,
-          createdOn: Number(createdOn)
-        };
-      })
-    );
-
-    return tokens;
+    
+    // Check if data exists and has the expected structure
+    if (!data || !data.getAllTokens) {
+      console.error("No data returned from GraphQL API or unexpected structure:", data);
+      return []; // Return empty array instead of mock data
+    }
+    
+    console.log(`Fetched ${data.getAllTokens.length} tokens successfully`);
+    
+    // Transform the data to match the expected format for TokenCard
+    return data.getAllTokens.map(token => ({
+      id: token.contractAddress,
+      name: token.name,
+      symbol: token.symbol,
+      description: token.description || "",
+      image: token.imageUrl || "/default-token-image.png",
+      creator: token.creatorAddress || "",
+      price: 0, // This isn't directly in your schema, might need calculation
+      marketCap: token.marketCap || 0,
+      dailyVolume: token.dailyVolume || 0,
+      volume7dChange: token.volumeChangePercent || 0,
+      priceChange24h: 0, // This isn't directly in your schema
+      social: token.social ? JSON.parse(token.social) : {},
+      createdAt: token.createdAt || new Date().toISOString(),
+      holderCount: token.holderCount || 0,
+      totalSupply: parseFloat(token.totalSupply) || 0,
+      tokensSold: parseFloat(token.tokensSold) || 0
+    }));
   } catch (error) {
     console.error("Error fetching tokens:", error);
+    // Return empty array instead of mock data
     return [];
   }
 };
 
 /**
- * Fetch single token details by contract address
- * @param {string} tokenAddress - The deployed token contract address
- * @returns {Object} - Token details (name, symbol, description, image, price, tokensSold, marketCap, creator)
+ * Fetch a specific token by ID
+ * @param {string} tokenId - The token ID to fetch
+ * @param {number} holderLimit - Optional limit for number of holders to fetch
+ * @returns {Object} - Token details
  */
-export const fetchTokenById = async (tokenAddress) => {
+export const fetchTokenById = async (tokenId, holderLimit = 20) => {
   try {
-    if (!window.ethereum) {
-      throw new Error("MetaMask is not installed.");
+    const GET_TOKEN_BY_ID = gql`
+      query GetTokenById($id: ID!, $holderLimit: Int) {
+        getTokenById(id: $id, holderLimit: $holderLimit) {
+          id
+          contractAddress
+          name
+          symbol
+          description
+          imageUrl
+          creatorAddress
+          totalSupply
+          tokensSold
+          dailyVolume
+          marketCap
+          weeklyVolume
+          volumeChangePercent
+          holderCount
+          holders {
+            address
+            balance
+            percentage
+          }
+          createdAt
+          updatedAt
+          social
+          factoryAddress
+        }
+      }
+    `;
+
+    const { data, error } = await apolloClient.query({
+      query: GET_TOKEN_BY_ID,
+      variables: { id: tokenId, holderLimit },
+      errorPolicy: 'all'
+    });
+    
+    if (error) {
+      console.error("GraphQL error:", error);
+      throw new Error(`GraphQL error: ${error.message}`);
     }
-
-    const provider = new ethers.BrowserProvider(window.ethereum);
-
-    const tokenContract = new ethers.Contract(
-      tokenAddress,
-      HYPE_TOKEN_ABI,
-      provider
-    );
-
-    const eduPrice = await fetchEduPrice();
-
-
-    const [
-      name,
-      symbol,
-      description,
-      image,
-      price,
-      tokensSold,
-      marketCap,
-      dailyVolume,
-      creator,
-      createdOn,
-
-    ] = await Promise.all([
-      tokenContract.name(),
-      tokenContract.symbol(),
-      tokenContract.description(),
-      tokenContract.image(),
-      tokenContract.getCurrentPrice(),
-      tokenContract.tokensSold(),
-      tokenContract.getMarketCap(),
-      tokenContract.get24HourVolume(),
-      tokenContract.owner(),
-      tokenContract.createdOn()
-    ]);
-
+    
+    if (!data || !data.getTokenById) {
+      console.error(`No token found with ID ${tokenId}`);
+      return null;
+    }
+    
+    const token = data.getTokenById;
+    
     return {
-      id: tokenAddress,
-      name,
-      symbol,
-      description,
-      image,
-      price: ethers.formatEther(price),
-      tokensSold: ethers.formatEther(tokensSold),
-      marketCap: (ethers.formatEther(marketCap) * eduPrice).toFixed(2),
-      dailyVolume: (ethers.formatEther(dailyVolume) * eduPrice).toFixed(2),
-      creator,
-      createdOn: Number(createdOn)
+      id: token.id,
+      contractAddress: token.contractAddress,
+      name: token.name,
+      symbol: token.symbol,
+      description: token.description || "",
+      image: token.imageUrl || "/default-token-image.png",
+      price: 0, // Calculate if needed
+      marketCap: token.marketCap || 0,
+      dailyVolume: token.dailyVolume || 0,
+      volume7dChange: token.volumeChangePercent || 0,
+      priceChange24h: 0, // Calculate if needed
+      social: token.social ? JSON.parse(token.social) : {},
+      createdAt: token.createdAt || new Date().toISOString(),
+      updatedAt: token.updatedAt,
+      holderCount: token.holderCount || 0,
+      totalSupply: parseFloat(token.totalSupply) || 0,
+      tokensSold: parseFloat(token.tokensSold) || 0,
+      factoryAddress: token.factoryAddress,
+      creatorAddress: token.creatorAddress,
+      holders: token.holders || []
     };
   } catch (error) {
-    console.error(`Error fetching token with ID ${tokenAddress}:`, error);
+    console.error(`Error fetching token ${tokenId}:`, error);
     return null;
   }
 };
 
+/**
+ * Buy tokens
+ * @param {string} tokenAddress - The token contract address
+ * @param {number} amount - The amount of tokens to buy
+ * @param {ethers.Signer} signer - The ethers.js signer
+ * @returns {Promise<ethers.TransactionReceipt>} - The transaction receipt
+ */
+export const buyTokens = async (tokenAddress, amount, signer) => {
+  try {
+    const tokenContract = new ethers.Contract(
+      tokenAddress,
+      [
+        {
+          "inputs": [],
+          "name": "buyTokens",
+          "outputs": [],
+          "stateMutability": "payable",
+          "type": "function"
+        }
+      ],
+      signer
+    );
+    
+    const tx = await tokenContract.buyTokens({ value: amount });
+    return await tx.wait();
+  } catch (error) {
+    console.error("Error buying tokens:", error);
+    throw error;
+  }
+};
 
+/**
+ * Sell tokens
+ * @param {string} tokenAddress - The token contract address
+ * @param {number} amount - The amount of tokens to sell
+ * @param {ethers.Signer} signer - The ethers.js signer
+ * @returns {Promise<ethers.TransactionReceipt>} - The transaction receipt
+ */
+export const sellTokens = async (tokenAddress, amount, signer) => {
+  try {
+    const tokenContract = new ethers.Contract(
+      tokenAddress,
+      [
+        {
+          "inputs": [
+            {"internalType": "uint256", "name": "amount", "type": "uint256"}
+          ],
+          "name": "sellTokens",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }
+      ],
+      signer
+    );
+    
+    const tx = await tokenContract.sellTokens(amount);
+    return await tx.wait();
+  } catch (error) {
+    console.error("Error selling tokens:", error);
+    throw error;
+  }
+};
 
 /**
  * Fetch holders and price history data for a token
@@ -231,5 +297,113 @@ export const fetchHoldersAndPriceData = async (tokenAddress, provider) => {
   } catch (error) {
     console.error("Error fetching holders and price data:", error);
     return { holders: [], priceHistory: [] };
+  }
+};
+
+/**
+ * Generate mock token data for development/testing
+ * @returns {Array} - List of mock token details
+ */
+const getMockTokens = () => {
+  return [
+    {
+      id: "0x1234567890123456789012345678901234567890",
+      name: "Example Token",
+      symbol: "EXT",
+      description: "This is an example token for development",
+      image: "/default-token-image.png",
+      price: 0.00123,
+      marketCap: 123000,
+      dailyVolume: 45000,
+      volume7dChange: 5.2,
+      priceChange24h: 2.3,
+      social: { twitter: "https://twitter.com/example", website: "https://example.com" },
+      createdAt: new Date().toISOString(),
+      holderCount: 250,
+      totalSupply: 1000000,
+      tokensSold: 750000
+    },
+    {
+      id: "0x0987654321098765432109876543210987654321",
+      name: "Test Token",
+      symbol: "TEST",
+      description: "A test token for development purposes",
+      image: "/default-token-image.png",
+      price: 0.00456,
+      marketCap: 456000,
+      dailyVolume: 78000,
+      volume7dChange: -2.1,
+      priceChange24h: -1.4,
+      social: { twitter: "https://twitter.com/test", website: "https://test.com" },
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      holderCount: 120,
+      totalSupply: 500000,
+      tokensSold: 300000
+    }
+  ];
+};
+
+/**
+ * Fetch all tokens from a specific factory
+ * @param {string} factoryAddress - The factory contract address
+ * @returns {Array} - List of token details
+ */
+export const fetchTokensByFactory = async (factoryAddress) => {
+  try {
+    if (!factoryAddress) {
+      console.error("Factory address is required");
+      return [];
+    }
+    
+    console.log("Fetching tokens for factory:", factoryAddress);
+    
+    const { data, error } = await apolloClient.query({
+      query: GET_TOKENS_BY_FACTORY,
+      variables: { factoryAddress },
+      errorPolicy: 'all'
+    });
+    
+    if (error) {
+      console.error("GraphQL error:", error);
+      throw new Error(`GraphQL error: ${error.message}`);
+    }
+    
+    // Check if data exists and has the expected structure
+    if (!data) {
+      console.error("No data returned from GraphQL API");
+      return []; 
+    }
+    
+    // Check if getTokensByFactory exists in the response
+    if (!data.getTokensByFactory) {
+      console.error("getTokensByFactory not found in response:", data);
+      return [];
+    }
+    
+    console.log(`Fetched ${data.getTokensByFactory.length} tokens for factory ${factoryAddress}`);
+    
+    // Transform the data to match the expected format for TokenCard
+    return data.getTokensByFactory.map(token => ({
+      id: token.contractAddress,
+      name: token.name,
+      symbol: token.symbol,
+      description: token.description || "",
+      image: token.imageUrl || "/default-token-image.png",
+      creator: token.creatorAddress || "",
+      price: 0, // This will be fetched separately
+      marketCap: token.marketCap || 0,
+      dailyVolume: token.dailyVolume || 0,
+      volume7dChange: token.volumeChangePercent || 0,
+      priceChange24h: 0, // This isn't directly in your schema
+      social: token.social ? JSON.parse(token.social) : {},
+      createdAt: token.createdAt || new Date().toISOString(),
+      holderCount: token.holderCount || 0,
+      totalSupply: parseFloat(token.totalSupply) || 0,
+      tokensSold: parseFloat(token.tokensSold) || 0,
+      factoryAddress: token.factoryAddress
+    }));
+  } catch (error) {
+    console.error("Error fetching tokens by factory:", error);
+    return [];
   }
 };

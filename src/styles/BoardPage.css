@@ -749,14 +749,6 @@
   }
 }
 
-/* Token Cards Grid */
-.token-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-  padding: 1rem 0;
-}
-
 /* Sort and Filter Container */
 .sort-container {
   display: flex;
@@ -802,54 +794,6 @@
   background-color: rgba(0, 246, 170, 0.1);
 }
 
-/* Token card styling */
-.token-card {
-  position: relative;
-  width: 100%;
-  height: 400px;
-  background: rgba(15, 36, 36, 0.3);
-  clip-path: polygon(
-    25px 0,     /* First point - move in from left */
-    100% 0,     /* Top right */
-    100% 100%,  /* Bottom right */
-    0 100%,     /* Bottom left */
-    0 25px      /* Last point - move up from bottom */
-  );
-  transition: all 0.3s ease;
-}
-
-/* Diagonal cut border accent */
-.token-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 16px;
-  height: 16px;
-  border-left: 2px solid #00F6AA;
-  border-bottom: 2px solid #00F6AA;
-  clip-path: polygon(0 100%, 100% 0, 100% 100%);
-  z-index: 2;
-}
-
-/* Optional glow effect for the cut */
-.token-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 16px;
-  height: 16px;
-  background: linear-gradient(135deg, rgba(0, 246, 170, 0.3) 0%, transparent 60%);
-  clip-path: polygon(0 100%, 100% 0, 100% 100%);
-  z-index: 1;
-}
-
-/* Update hover effects */
-.token-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 246, 170, 0.2);
-}
 
 /* Actions Bar */
 .actions-bar {
@@ -1325,4 +1269,143 @@
     width: 100%;
     margin-top: 10px;
   }
+}
+
+/* No Results Styling - Updated to prevent grid inheritance */
+.no-results-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  padding: 2rem;
+  grid-column: 1 / -1; /* Span all columns in the grid */
+  margin: 2rem auto;
+  max-width: 600px; /* Limit width */
+}
+
+.no-results-content {
+  background: rgba(13, 18, 30, 0.7);
+  border: 1px solid rgba(0, 246, 170, 0.2);
+  border-radius: 16px;
+  padding: 2.5rem;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 0 16px rgba(0, 246, 170, 0.1);
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.no-results-icon {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.no-results-icon svg {
+  filter: drop-shadow(0 0 8px rgba(0, 246, 170, 0.5));
+  animation: pulse 2s infinite;
+}
+
+.no-results-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.no-results-message {
+  font-size: 1rem;
+  color: #a0a0b0;
+  margin-bottom: 1.5rem;
+}
+
+.no-results-suggestions {
+  text-align: left;
+  background: rgba(0, 246, 170, 0.05);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.no-results-suggestions p {
+  color: #00F6AA;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.no-results-suggestions ul {
+  list-style-type: none;
+  padding-left: 0.5rem;
+}
+
+.no-results-suggestions li {
+  color: #a0a0b0;
+  margin-bottom: 0.5rem;
+  position: relative;
+  padding-left: 1.25rem;
+}
+
+.no-results-suggestions li:before {
+  content: "•";
+  color: #00F6AA;
+  position: absolute;
+  left: 0;
+  font-size: 1.2rem;
+}
+
+.no-results-reset-button {
+  background: rgba(0, 246, 170, 0.1);
+  color: #00F6AA;
+  border: 1px solid rgba(0, 246, 170, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 auto;
+}
+
+.no-results-reset-button:hover {
+  background: rgba(0, 246, 170, 0.2);
+  box-shadow: 0 0 15px rgba(0, 246, 170, 0.3);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* When no results are shown, adjust the token-list container */
+.token-list:has(.no-results-container) {
+  display: block; /* Override grid display */
+  padding: 0;
 }

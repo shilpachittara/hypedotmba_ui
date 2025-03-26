@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import '../styles/TokenCard.css';
 
 const TokenCard = ({ token }) => {
   const router = useRouter();
@@ -8,13 +9,37 @@ const TokenCard = ({ token }) => {
     router.push(`/coin/${token.id}`);
   };
 
-  const imageSrc = token.image || "/default_image.png";
-  const truncatedCreator = `${token.creator.slice(0, 6)}...${token.creator.slice(-4)}`;
+  // Use default coin image if none provided
+  const imageSrc = token.image || "/default-token-image.png";
+  
+  // Format market cap with currency symbol
+  const formatMarketCap = (value) => {
+    if (value === undefined || value === null) return "0";
+    return parseFloat(value).toLocaleString('en-US', {
+      maximumFractionDigits: 0
+    });
+  };
+
+  // Truncate creator address
+  const truncatedCreator = token.creator 
+    ? `${token.creator.slice(0, 6)}...${token.creator.slice(-4)}`
+    : "0xb200...d021";
 
   // Calculate time ago
   const calculateTimeAgo = (createdOn) => {
+    if (!createdOn) return "__h";
+    
     const now = new Date();
-    const createdDate = new Date(createdOn * 1000); // Convert timestamp to milliseconds
+    // Check if timestamp is in milliseconds (13 digits) or seconds (10 digits)
+    const createdDate = new Date(
+      createdOn.toString().length > 10 
+        ? parseInt(createdOn) // Already in milliseconds
+        : parseInt(createdOn) * 1000 // Convert seconds to milliseconds
+    );
+    
+    // Check if date is valid
+    if (isNaN(createdDate.getTime())) return "NaN$";
+    
     const diff = now - createdDate; // Time difference in milliseconds
 
     const seconds = Math.floor(diff / 1000);
@@ -30,87 +55,69 @@ const TokenCard = ({ token }) => {
     return `${seconds}s`;
   };
 
-  const timeAgo = calculateTimeAgo(token.createdOn);
+  const timeAgo = calculateTimeAgo(token.createdAt);
   
-  // Format market cap with currency symbol
-  const formatMarketCap = (value) => {
-    const formatted = parseFloat(value).toLocaleString('en-US', {
-      maximumFractionDigits: 2
-    });
-    return formatted;
+  // Truncate description to ensure consistent height
+  const truncateDescription = (text, maxLength = 50) => {
+    if (!text) return "";
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
   };
-  
-  // Random price change for demo (replace with actual data)
-  const priceChange = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 10).toFixed(2);
-  const isPriceUp = priceChange > 0;
 
   return (
-    <div className="token-card" onClick={handleClick}>
-      {/* Image Section */}
-      <div className="token-image-section">
-        <Image
-          src={imageSrc}
-          alt={token.name}
-          className="token-image"
-          width={300}
-          height={200}
-          priority
-          style={{height:"250px",objectFit:"cover"}}
-        />
-        <div className="image-overlay"></div>
-      </div>
-
-      {/* Content Section - Enhanced with adjusted padding */}
-      <div className="token-content">
-        {/* Title Row - Enhanced */}
-        <div className="token-header">
-          <span className="token-symbol">{token.symbol || "TOKEN"}</span>
-          <h3 className="token-name">{token.name}</h3>
-          <div className="token-rarity">
-            <span className="rarity-value">Top 1%</span>
-          </div>
+    <div className="custom-token-card" onClick={handleClick}>
+      <div className="token-card-inner">
+        {/* Image Section */}
+        <div className="token-image-section">
+          <Image
+            src={imageSrc}
+            alt={token.name || "Token"}
+            className="token-image"
+            width={400}
+            height={300}
+            priority
+          />
         </div>
 
-        {/* Stats Row - Enhanced */}
-        <div className="token-stats">
-          <div className="stat-item highlight">
-            <span className="stat-value">
-              ${formatMarketCap(token.marketCap)}
-              <span className={`value-change ${isPriceUp ? 'positive' : 'negative'}`}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d={isPriceUp 
-                    ? "M8 12l4-4 4 4M12 8v12" 
-                    : "M16 12l-4 4-4-4M12 16V4"} 
-                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  />
-                </svg>
-                {Math.abs(priceChange)}%
-              </span>
-            </span>
-            <span className="stat-label">Market Cap</span>
-          </div>
+        {/* Content Section */}
+        <div className="token-content">
+          {/* Token Symbol */}
+          <div className="token-symbol">{token.symbol}</div>
           
-          {/* Improved Volume Display */}
-          <div className="stat-item volume-stat">
-            <span className="stat-value">
-              ${formatMarketCap(token.dailyVolume)}
-              <span className="value-currency">24h</span>
-            </span>
-            <span className="stat-label">Volume</span>
+          {/* Token Name and Description */}
+          <div className="token-details">
+            <div className="token-name">{token.name}</div>
+            <div className="token-description">{truncateDescription(token.description)}</div>
           </div>
-        </div>
 
-        {/* Creator Info - Enhanced */}
-        <div className="token-creator">
-          <div className="creator-badge">
-            {truncatedCreator}
+          {/* Market Stats */}
+          <div className="token-stats">
+            <div className="stat-item highlight">
+              <span className="stat-value">
+                ${formatMarketCap(token.marketCap)}
+              </span>
+              <span className="stat-label">Market Cap</span>
+            </div>
+            
+            {/* Improved Volume Display */}
+            <div className="stat-item volume-stat">
+              <span className="stat-value">
+                ${formatMarketCap(token.dailyVolume)}
+                <span className="value-currency">24h</span>
+              </span>
+              <span className="stat-label">Volume</span>
+            </div>
           </div>
-          <div className="time-indicator">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10" strokeWidth="2" />
-              <polyline points="12 6 12 12 16 14" strokeWidth="2" />
-            </svg>
-            {timeAgo} ago
+
+          {/* Creator Info */}
+          <div className="creator-info-card">
+            <div className="creator-address">
+              <span className="address-dot"></span>
+              {truncatedCreator}
+            </div>
+            <div className="creation-time-card">
+              {timeAgo} ago
+            </div>
           </div>
         </div>
       </div>

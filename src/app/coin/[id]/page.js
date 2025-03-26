@@ -3,11 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ethers } from "ethers";
-import { fetchHoldersAndPriceData, fetchTokenById } from "../../../utils/_api";
+import { fetchTokenById } from "@/utils/_api";
 import Header from "@/components/Header";
 import "@/styles/TokenDetailPage.css";
 import { useWallet } from "@/context/WalletContext";
-import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   LineElement,
@@ -19,24 +18,20 @@ import {
   TimeScale
 } from "chart.js";
 import 'chartjs-adapter-date-fns';
-import Image from "next/image";
 import Chart from 'chart.js/auto';
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, TimeScale);
 
 const HYPE_TOKEN_ABI = [
-  "function buyTokens() public payable",
-  "function sellTokens(uint256 tokenAmount) public",
-  "function getCurrentPrice() public view returns (uint256)",
-  "function balanceOf(address account) public view returns (uint256)"
+  "function buyTokensWithEdu() payable",
+  "function sellTokensForEdu(uint256 tokenAmount)",
+  "function getCurrentPrice() view returns (uint256)",
+  "function getBuyPrice(uint256 tokenAmount) view returns (uint256)",
+  "function getSellPrice(uint256 tokenAmount) view returns (uint256)",
+  "function balanceOf(address owner) view returns (uint256)"
 ];
 
-const EDU_TOKEN_ADDRESS = "0xbe52762D8D68d183C7Cf4BB3e2aaa312e47C7084"; // EDU Token Address
-const EDU_TOKEN_ABI = [
-  "function approve(address spender, uint256 amount) public returns (bool)"
-];
-
-const THRESHOLD = process.env.NEXT_PUBLIC_THESHOLD;
+const THRESHOLD = process.env.NEXT_PUBLIC_THESHOLD || 1000000;
 
 // Function to generate dummy price history data based on token ID
 const generatePriceHistory = (id, currentPrice, priceChange) => {
@@ -45,107 +40,50 @@ const generatePriceHistory = (id, currentPrice, priceChange) => {
   const days = 30; // 30 days of data
   const priceData = [];
   const labels = [];
-  
+
   // Create a somewhat realistic price trend
   let price = parseFloat(currentPrice);
   // Work backwards to calculate what the price would have been 30 days ago
   const dailyChangePercent = parseFloat(priceChange) / 5; // Smoother trend than just the 24h change
   const startPrice = price / Math.pow(1 + (dailyChangePercent / 100), days);
-  
+
   const now = new Date();
-  
+
   // Generate day labels and prices
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
     labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    
+
     // Generate a price with some randomness but overall following the trend
     const volatilityFactor = 0.5 + (Math.sin(seed + i) * 0.5); // Value between 0 and 1
     const dayChange = (dailyChangePercent / 100) * volatilityFactor;
-    
+
     if (i === days - 1) {
       // First day uses start price
       price = startPrice;
     } else {
       // Subsequent days add a bit of random noise to the trend
-      price = price * (1 + dayChange + ((Math.sin(seed * i) * 0.02))); 
+      price = price * (1 + dayChange + ((Math.sin(seed * i) * 0.02)));
     }
-    
+
     priceData.push(price);
   }
-  
+
   return {
     labels,
     prices: priceData
   };
 };
 
-// Function to generate consistent dummy data based on ID
-const generateDummyToken = (id) => {
-  // Use ID to create somewhat deterministic but varied dummy data
-  const idNum = parseInt(id) || 1;
-  const seed = idNum * 13; // Simple seeding
-  
-  // Helper for deterministic "random" numbers
-  const seededRandom = (min, max, seedOffset = 0) => {
-    const x = Math.sin(seed + seedOffset) * 10000;
-    return min + (x - Math.floor(x)) * (max - min);
-  };
-  
-  // Generate top holders (between 3-8)
-  const holdersCount = Math.floor(seededRandom(3, 9, 15));
-  const holders = [];
-  let remainingPercent = 100;
-  
-  for (let i = 0; i < holdersCount; i++) {
-    const isLast = i === holdersCount - 1;
-    const percent = isLast ? remainingPercent : Math.floor(seededRandom(5, remainingPercent / 2, i + 20));
-    remainingPercent -= percent;
-    
-    holders.push({
-      address: `0x${Array(40).fill(0).map((_, j) => Math.floor(seededRandom(0, 16, i * 40 + j + 30)).toString(16)).join('')}`,
-      percentage: percent
-    });
-  }
-  
-  // Generate token data
-  return {
-    id: id,
-    name: `${["Cosmic", "Quantum", "Nebula", "Stellar", "Galaxy", "Nova", "Pulsar"][idNum % 7]} Token`,
-    symbol: `${["CSM", "QTM", "NBL", "STR", "GLX", "NVA", "PLS"][idNum % 7]}`,
-    price: seededRandom(0.00001, 0.01, 1).toFixed(8),
-    marketCap: Math.floor(seededRandom(1000000, 100000000, 2)),
-    dailyVolume: Math.floor(seededRandom(100000, 10000000, 3)),
-    volume7dChange: (seededRandom(-50, 50, 4)).toFixed(2),
-    priceChange24h: (seededRandom(-15, 15, 5)).toFixed(2),
-    totalSupply: `${Math.floor(seededRandom(100000000, 10000000000, 6))}`,
-    createdAt: new Date(Date.now() - seededRandom(1, 180, 7) * 24 * 60 * 60 * 1000).toISOString(),
-    description: `${["Cosmic", "Quantum", "Nebula", "Stellar", "Galaxy", "Nova", "Pulsar"][idNum % 7]} Token is a revolutionary cryptocurrency designed to transform the digital economy. It features advanced smart contract capabilities, cross-chain compatibility, and unprecedented scalability for next-generation DeFi applications.`,
-    website: `https://token${id}.crypto`,
-    twitter: `https://twitter.com/token${id}`,
-    telegram: `https://t.me/token${id}`,
-    creator: `0x${Array(40).fill(0).map((_, i) => Math.floor(seededRandom(0, 16, i + 10)).toString(16)).join('')}`,
-    image: idNum % 2 === 0 
-      ? "https://cdn.pixabay.com/photo/2022/03/03/20/47/the-simpson-7046041_1280.jpg" 
-      : "https://cdn.pixabay.com/photo/2022/02/18/16/09/ape-7020995_1280.png",
-    chain: ["Ethereum", "Binance Smart Chain", "Solana", "Polygon"][idNum % 4],
-    status: "Active",
-    liquidity: Math.floor(seededRandom(100000, 5000000, 8)),
-    holders,
-    transactions: Math.floor(seededRandom(1000, 100000, 10)),
-    createdOn: Math.floor(Date.now() / 1000 - seededRandom(1, 180, 11) * 24 * 60 * 60),
-    contract: `0x${Array(40).fill(0).map((_, i) => Math.floor(seededRandom(0, 16, i + 20)).toString(16)).join('')}`,
-    circulatingSupply: Math.floor(seededRandom(50000000, 8000000000, 12)),
-    maxSupply: 10000000000,
-  };
-};
 
 const CoinDetailPage = () => {
   const router = useRouter();
   const params = useParams();
   const { id } = params;
   const [token, setToken] = useState(null);
+  const [holders, setHolders] = useState([]);
+  const [priceHistory, setPriceHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [tradeType, setTradeType] = useState("buy"); // "buy" or "sell"
   const [amount, setAmount] = useState("");
@@ -164,40 +102,85 @@ const CoinDetailPage = () => {
   const [chartLoading, setChartLoading] = useState(true);
   const [chartError, setChartError] = useState(null);
 
+  // Add new state variables for the bidirectional calculation
+  const [inputMode, setInputMode] = useState("spend"); // "spend" or "receive"
+  const [spendAmount, setSpendAmount] = useState("");
+  const [receiveAmount, setReceiveAmount] = useState("");
+
   // 🚀 Handle Buy/Sell Button State
-  const isTradeButtonDisabled = !connected || isProcessing || !amount || parseFloat(amount) <= 0;
+  const [isTradeButtonDisabled, setIsTradeButtonDisabled] = useState(true);
 
   const tradeButtonMessage = !connected
     ? "🔌 Please connect your wallet to place a trade."
     : "";
 
+  // Calculate estimated value based on amount and price
+  const getEstimatedValue = (amount, price) => {
+    if (!amount || !price) return "0.00";
+    const numAmount = parseFloat(amount);
+    const numPrice = parseFloat(price);
+    if (isNaN(numAmount) || isNaN(numPrice)) return "0.00";
+
+    if (tradeType === 'buy') {
+      // For buy: amount of EDU / price = tokens received
+      return (numAmount / numPrice).toFixed(4);
+    } else {
+      // For sell: amount of tokens * price = EDU received
+      return (numAmount * numPrice).toFixed(4);
+    }
+  };
+
+  // Fix the dependency array issue
   useEffect(() => {
     const fetchToken = async () => {
       setIsLoading(true);
       try {
-        // Replace with your actual API endpoint
-        const response = await fetch(`/api/tokens/${id}`);
-        
-        if (!response.ok) {
+        // Use the new fetchTokenById function instead of mock data
+        const tokenData = await fetchTokenById(id);
+
+        console.log("Token data:", tokenData);
+        if (!tokenData) {
           throw new Error('Failed to fetch token data');
         }
-        
-        const data = await response.json();
-        setToken(data);
-        
+
+        // Ensure token has all required properties with defaults
+        const enhancedToken = {
+          ...tokenData,
+          price: tokenData.price || 0,
+          priceChange24h: tokenData.priceChange24h || 0,
+          marketCap: tokenData.marketCap || 0,
+          dailyVolume: tokenData.dailyVolume || 0,
+          volume7dChange: tokenData.volume7dChange || 0,
+          holders: tokenData.holders || [],
+          social: tokenData.social || {},
+          createdAt: tokenData.createdAt || Date.now().toString(),
+          image: tokenData.image || "/default-token-image.png"
+        };
+
+        setToken(enhancedToken);
+
         // Fetch initial chart data
-        fetchChartData(id, data.price, data.priceChange24h, timePeriod);
+        fetchChartData(id, enhancedToken.price, enhancedToken.priceChange24h, timePeriod);
       } catch (error) {
         console.error('Error fetching token data:', error);
+
+        fetchChartData(id, mockToken.price, mockToken.priceChange24h, timePeriod);
+      } finally {
         setIsLoading(false);
-        setError('Failed to load token data. Please try again later.');
       }
     };
 
     if (id) {
       fetchToken();
     }
-  }, [id]);
+  }, [id]); // Remove timePeriod from dependency array
+
+  // Add a separate effect for handling time period changes
+  useEffect(() => {
+    if (token) {
+      fetchChartData(id, token.price, token.priceChange24h, timePeriod);
+    }
+  }, [timePeriod, token, id]); // This effect depends on timePeriod and token
 
   useEffect(() => {
     // Initialize chart when token data is loaded
@@ -206,29 +189,29 @@ const CoinDetailPage = () => {
       if (chartInstance.current) {
         chartInstance.current.destroy();
       }
-      
+
       // Generate price history based on token data
       const priceHistory = generatePriceHistory(
-        token.id, 
-        token.price, 
+        token.id,
+        token.price,
         token.priceChange24h
       );
-      
+
       const ctx = chartRef.current.getContext('2d');
-      
+
       // Determine gradient colors based on price trend
       const isPriceUp = parseFloat(token.priceChange24h) > 0;
       const gradientColor1 = isPriceUp ? 'rgba(0, 246, 170, 0.8)' : 'rgba(255, 91, 91, 0.8)';
       const gradientColor2 = isPriceUp ? 'rgba(0, 163, 255, 0.8)' : 'rgba(255, 30, 30, 0.8)';
-      
+
       const gradient = ctx.createLinearGradient(0, 0, 0, 400);
       gradient.addColorStop(0, gradientColor1);
       gradient.addColorStop(1, gradientColor2);
-      
+
       const fillGradient = ctx.createLinearGradient(0, 0, 0, 400);
       fillGradient.addColorStop(0, isPriceUp ? 'rgba(0, 246, 170, 0.2)' : 'rgba(255, 91, 91, 0.2)');
       fillGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      
+
       // Create the chart
       chartInstance.current = new Chart(ctx, {
         type: 'line',
@@ -268,7 +251,7 @@ const CoinDetailPage = () => {
               padding: 10,
               displayColors: false,
               callbacks: {
-                label: function(context) {
+                label: function (context) {
                   return `$${context.parsed.y.toFixed(8)}`;
                 }
               }
@@ -283,7 +266,7 @@ const CoinDetailPage = () => {
               ticks: {
                 color: 'rgba(255, 255, 255, 0.5)',
                 maxRotation: 0,
-                callback: function(value, index) {
+                callback: function (value, index) {
                   // Show fewer labels on x-axis to avoid clutter
                   return index % 5 === 0 ? this.getLabelForValue(value) : '';
                 }
@@ -296,7 +279,7 @@ const CoinDetailPage = () => {
               },
               ticks: {
                 color: 'rgba(255, 255, 255, 0.5)',
-                callback: function(value) {
+                callback: function (value) {
                   return '$' + value.toFixed(6);
                 }
               }
@@ -317,22 +300,310 @@ const CoinDetailPage = () => {
     }
   }, [token]);
 
-  // Fetch the user's balance of the selected token
-  const fetchBalanceAndPrice = async (tokenData) => {
-    if (typeof window.ethereum !== "undefined") {
-      try {
-        const nativeBalanceRaw = await provider.getBalance(account);
-        setEduBalance(ethers.formatEther(nativeBalanceRaw));
-        const tokenContract = new ethers.Contract(tokenData.id, HYPE_TOKEN_ABI, provider);
-        const balanceRaw = await tokenContract.balanceOf(account);
-        setBalance(ethers.formatEther(balanceRaw)); // Convert from Wei to ETH format
-        const priceRaw = await tokenContract.getCurrentPrice();
-        setCurrentPrice(ethers.formatEther(priceRaw));
-      } catch (error) {
-        console.error("Error fetching token balance:", error);
+  // Fetch the token price directly from the contract with comprehensive error handling
+  const fetchTokenPrice = async (tokenAddress) => {
+    if (!provider || !tokenAddress) return "0.0";
+
+    try {
+      console.log("Fetching price for token:", tokenAddress);
+
+      // First, check if the address is valid
+      if (!ethers.isAddress(tokenAddress)) {
+        console.error("Invalid token address:", tokenAddress);
+        return "0.0";
       }
-    } else {
-      console.warn("MetaMask is not installed.");
+
+      // Let's try to understand the contract better
+      // First, get the contract code to confirm it exists
+      const code = await provider.getCode(tokenAddress);
+      if (code === '0x' || code === '0x0') {
+        console.error("No contract found at address:", tokenAddress);
+        return "0.0";
+      }
+
+      console.log("Contract exists at address:", tokenAddress);
+
+      // Let's try all possible price-related function names
+      const priceFunctions = [
+        "getCurrentPrice()",
+        "getPrice()",
+        "price()",
+        "currentPrice()",
+        "calculatePrice()",
+        "getBuyPrice(uint256)",
+        "getSellPrice(uint256)",
+        "getBuyPrice()",
+        "getSellPrice()"
+      ];
+
+      // Create a minimal interface with just the function signature
+      for (const funcSig of priceFunctions) {
+        try {
+          // Extract function name and parameters
+          const funcName = funcSig.split('(')[0];
+          const hasParams = funcSig.includes('(uint256)');
+
+          console.log(`Trying function: ${funcSig}`);
+
+          // Create contract instance with just this function
+          const abi = [`function ${funcSig} view returns (uint256)`];
+          const tokenContract = new ethers.Contract(tokenAddress, abi, provider);
+
+          // Call the function
+          let priceRaw;
+          if (hasParams) {
+            // If the function requires a parameter, pass a small amount (1 token)
+            const oneToken = ethers.parseEther("1");
+            priceRaw = await tokenContract[funcName](oneToken);
+          } else {
+            priceRaw = await tokenContract[funcName]();
+          }
+
+          // If we get here, the function call succeeded
+          console.log(`Success with function: ${funcSig}`);
+
+          // Format the price from wei to ETH
+          const formattedPrice = ethers.formatEther(priceRaw);
+          console.log(`Price from ${funcSig}:`, formattedPrice);
+
+          // Validate the price (should be a reasonable number)
+          const numPrice = parseFloat(formattedPrice);
+          if (numPrice > 0 && numPrice < 1000) {
+            return formattedPrice;
+          } else {
+            console.log(`Price from ${funcSig} seems unreasonable:`, formattedPrice);
+          }
+        } catch (funcError) {
+          // Log the specific error for this function
+          if (funcError.message.includes("execution reverted")) {
+            console.log(`Function ${funcSig} reverted`);
+          } else if (funcError.message.includes("call revert exception")) {
+            console.log(`Function ${funcSig} doesn't exist or reverted`);
+          } else {
+            console.log(`Error with ${funcSig}:`, funcError.message);
+          }
+        }
+      }
+
+      // If we get here, none of the direct price functions worked
+      console.log("All direct price functions failed");
+
+      // Let's try to get the contract's ABI from Etherscan or a similar service
+      // This would require an API key and network-specific logic
+
+      // For now, let's try a different approach: check if this is a HypeToken
+      // by looking for specific functions that should be in the HypeToken contract
+      try {
+        const hypeTokenFunctions = [
+          "function buyTokens() payable",
+          "function sellTokens(uint256 amount)",
+          "function balanceOf(address account) view returns (uint256)",
+          "function symbol() view returns (string)"
+        ];
+
+        // Check if these functions exist to confirm it's a HypeToken
+        let isHypeToken = true;
+        for (const funcDef of hypeTokenFunctions) {
+          try {
+            const funcName = funcDef.split(' ')[1].split('(')[0];
+            const tokenContract = new ethers.Contract(tokenAddress, [funcDef], provider);
+
+            if (funcName === 'symbol') {
+              const symbol = await tokenContract.symbol();
+              console.log("Token symbol:", symbol);
+            } else if (funcName === 'balanceOf') {
+              // Just check if the function exists, don't need to call it
+              isHypeToken = true;
+            }
+          } catch (error) {
+            if (error.message.includes("call revert exception")) {
+              console.log(`Function ${funcDef.split(' ')[1]} doesn't exist`);
+              isHypeToken = false;
+              break;
+            }
+          }
+        }
+
+        if (isHypeToken) {
+          console.log("This appears to be a HypeToken contract");
+
+          // For HypeToken, we know the price is calculated based on the bonding curve
+          // Let's try to get the parameters needed for the calculation
+
+          // Try to get the token's reserve balance (ETH held by the contract)
+          const reserveBalance = await provider.getBalance(tokenAddress);
+          console.log("Contract reserve balance:", ethers.formatEther(reserveBalance));
+
+          // Try to get the total supply
+          const totalSupplyContract = new ethers.Contract(
+            tokenAddress,
+            ["function totalSupply() view returns (uint256)"],
+            provider
+          );
+
+          try {
+            const totalSupply = await totalSupplyContract.totalSupply();
+            console.log("Total supply:", ethers.formatEther(totalSupply));
+
+            // If we have both reserve balance and total supply, we can estimate the price
+            // using a simple formula based on the bonding curve
+            if (reserveBalance > 0n && totalSupply > 0n) {
+              // Simple price estimate: reserve / totalSupply
+              const estimatedPrice = ethers.formatEther(
+                (reserveBalance * ethers.parseEther("1")) / totalSupply
+              );
+
+              console.log("Estimated price from reserve/supply:", estimatedPrice);
+              return estimatedPrice;
+            }
+          } catch (supplyError) {
+            console.log("Error getting total supply:", supplyError.message);
+          }
+        }
+      } catch (hypeTokenError) {
+        console.log("Error checking if this is a HypeToken:", hypeTokenError.message);
+      }
+
+      // If all else fails, use the token's stored price or a default
+      console.log("Using fallback price");
+      return token?.price || "0.001";
+
+    } catch (error) {
+      console.error("Error in fetchTokenPrice:", error);
+      return token?.price || "0.001";
+    }
+  };
+
+  // Add this function to check if the contract exists and is valid
+  const validateContract = async (contractAddress) => {
+    if (!provider || !contractAddress) return false;
+    
+    try {
+      // Check if the address is valid
+      if (!ethers.isAddress(contractAddress)) {
+        console.error("Invalid contract address format:", contractAddress);
+        return false;
+      }
+      
+      // Check if there's code at the address (i.e., it's a contract)
+      const code = await provider.getCode(contractAddress);
+      if (code === '0x' || code === '0x0') {
+        console.error("No contract found at address:", contractAddress);
+        return false;
+      }
+      
+      console.log("Contract validated at address:", contractAddress);
+      return true;
+    } catch (error) {
+      console.error("Error validating contract:", error);
+      return false;
+    }
+  };
+
+  // Function to fetch user's token balance and ETH balance
+  const fetchBalanceAndPrice = async (token) => {
+    if (!connected || !provider || !account || !token?.contractAddress) {
+      console.log("Missing requirements for fetching balances");
+      return;
+    }
+    
+    try {
+      console.log("Fetching balances for token:", token.contractAddress);
+      
+      // Fetch EDU balance first
+      try {
+        const eduBalance = await provider.getBalance(account);
+        const formattedEduBalance = ethers.formatEther(eduBalance);
+        setEduBalance(formattedEduBalance);
+        console.log(`EDU balance: ${formattedEduBalance}`);
+      } catch (eduError) {
+        console.error("Error fetching EDU balance:", eduError);
+        setEduBalance("0.0");
+      }
+      
+      // Create token contract instance with multiple balance fetching methods
+      const tokenContract = new ethers.Contract(
+        token.contractAddress,
+        [
+          "function balanceOf(address) view returns (uint256)",
+          "function getCurrentPrice() view returns (uint256)",
+          "function price() view returns (uint256)",
+          "function getPrice() view returns (uint256)"
+        ],
+        provider
+      );
+      
+      // Try to fetch token balance
+      let balanceRaw = null;
+      try {
+        console.log("Trying balanceOf method...");
+        balanceRaw = await tokenContract.balanceOf(account);
+        console.log("balanceOf succeeded:", balanceRaw.toString());
+      } catch (balanceError) {
+        console.warn("Error with balanceOf method:", balanceError.message);
+        
+        // Try alternative methods if available
+        try {
+          console.log("Trying alternative balance method...");
+          // You could add alternative methods here if the contract has them
+          // For example: balanceRaw = await tokenContract.getBalance(account);
+        } catch (altError) {
+          console.warn("Alternative balance method failed:", altError.message);
+        }
+      }
+      
+      if (balanceRaw === null) {
+        console.error("All balance fetching methods failed");
+        setBalance("0.0");
+      } else {
+        const formattedBalance = ethers.formatEther(balanceRaw);
+        setBalance(formattedBalance);
+        console.log(`Token balance: ${formattedBalance} ${token.symbol}`);
+      }
+      
+      // Try to fetch current token price with multiple methods
+      let priceRaw = null;
+      
+      // Try getCurrentPrice first
+      try {
+        console.log("Trying getCurrentPrice method...");
+        priceRaw = await tokenContract.getCurrentPrice();
+        console.log("getCurrentPrice succeeded:", priceRaw.toString());
+      } catch (priceError) {
+        console.warn("Error with getCurrentPrice method:", priceError.message);
+        
+        // Try price() method
+        try {
+          console.log("Trying price method...");
+          priceRaw = await tokenContract.price();
+          console.log("price method succeeded:", priceRaw.toString());
+        } catch (altPriceError) {
+          console.warn("price method failed:", altPriceError.message);
+          
+          // Try getPrice() method
+          try {
+            console.log("Trying getPrice method...");
+            priceRaw = await tokenContract.getPrice();
+            console.log("getPrice method succeeded:", priceRaw.toString());
+          } catch (getpriceError) {
+            console.warn("getPrice method failed:", getpriceError.message);
+          }
+        }
+      }
+      
+      if (priceRaw === null) {
+        console.error("All price fetching methods failed");
+        setCurrentPrice("0.0");
+      } else {
+        const formattedPrice = ethers.formatEther(priceRaw);
+        setCurrentPrice(formattedPrice);
+        console.log(`Current price: ${formattedPrice} ETH per ${token.symbol}`);
+      }
+      
+    } catch (error) {
+      console.error("Error in fetchBalanceAndPrice:", error);
+      setBalance("0.0");
+      setCurrentPrice("0.0");
     }
   };
 
@@ -343,142 +614,491 @@ const CoinDetailPage = () => {
   // Handle Buy/Sell Toggle
   const handleTradeTypeChange = (type) => {
     setTradeType(type);
-    setAmount("");
-    setCalculatedTokens("0.0");
+    setSpendAmount("");
+    setReceiveAmount("");
+    setErrorMessage("");
+    setInputMode("spend");
   };
 
-  // 💵 Handle input change and calculate token amount
-  const handleAmountChange = (e) => {
-    const value = e.target.value;
+  // Handle input change for spend amount
+  const handleSpendAmountChange = async (value) => {
     if (value === '' || /^(\d+\.?\d*|\.\d+)$/.test(value)) {
-      setAmount(value);
+      setSpendAmount(value);
+      setInputMode("spend");
+      setErrorMessage("");
+      
+      // Don't calculate if value is empty
+      if (!value || value === '0') {
+        setReceiveAmount("");
+        return;
+      }
+      
+      // Validate input value
+      const inputValue = parseFloat(value);
+      if (isNaN(inputValue) || inputValue <= 0) {
+        setErrorMessage("Please enter a valid amount greater than 0");
+        setReceiveAmount("");
+        return;
+      }
+      
+      // Check if user has sufficient balance
+      const userBalance = tradeType === 'buy' 
+        ? parseFloat(eduBalance) 
+        : parseFloat(balance);
+        
+      if (inputValue > userBalance) {
+        setErrorMessage(`Amount exceeds your balance. Your balance is ${userBalance.toFixed(4)} ${tradeType === 'buy' ? 'ETH' : token?.symbol}`);
+      }
+      
+      // Calculate receive amount based on spend amount using contract functions
+      try {
+        let calculatedReceiveAmount;
+        
+        if (tradeType === 'buy') {
+          // For buy: calculate tokens received for ETH spent
+          // We need to calculate how many tokens we'll get for this ETH amount
+          const ethAmount = value;
+          // This is a simplified calculation - ideally use the contract's getBuyPrice
+          calculatedReceiveAmount = await calculateTokensForEth(ethAmount);
+        } else {
+          // For sell: calculate ETH received for tokens sold
+          // We need to calculate how much ETH we'll get for these tokens
+          const tokenAmount = value;
+          // This is a simplified calculation - ideally use the contract's getSellPrice
+          calculatedReceiveAmount = await calculateEthForTokens(tokenAmount);
+        }
+        
+        setReceiveAmount(calculatedReceiveAmount);
+      } catch (error) {
+        console.error("Calculation error:", error);
+        setErrorMessage("Error calculating exchange amount");
+        setReceiveAmount("");
+      }
     }
   };
 
-  // ⏳ Handle percentage buttons for sell
-  const setPercentage = (percent) => {
-    if (!token) return;
+  // Helper function to calculate tokens for ETH
+  const calculateTokensForEth = async (ethAmount) => {
+    if (!ethAmount || parseFloat(ethAmount) === 0) return "0";
     
-    // Use a consistent balance approach for the trade UI
-    const balance = tradeType === 'buy' ? 1000 : 100; // Placeholder values until real API
-    const calculatedAmount = (balance * percent / 100).toFixed(6);
-    setAmount(calculatedAmount);
-  };
-
-  // Handle Buy Transaction
-  const handleBuy = async () => {
-    if (!connected) {
-      setErrorMessage("Please connect your wallet.");
-      return;
-    }
-
-    if (!amount || parseFloat(amount) <= 0) {
-      setErrorMessage("Please enter a valid amount.");
-      return;
-    }
-
     try {
-      setIsProcessing(true);
-      setErrorMessage("");
-      setSuccessMessage("");
-
-      const signer = await provider.getSigner();
-
-      // Initialize EDU token contract
-      const eduTokenContract = new ethers.Contract(EDU_TOKEN_ADDRESS, EDU_TOKEN_ABI, signer);
-
-      // Convert amount to Wei
-      const eduAmountInWei = ethers.parseEther(amount);
-
-      // Approve token contract to spend EDU
-      const approveTx = await eduTokenContract.approve(id, eduAmountInWei);
-      await approveTx.wait();
-      console.log("EDU approved");
-
-      // Initialize the Token contract (HypeToken)
-
-      const tokenContract = new ethers.Contract(id, HYPE_TOKEN_ABI, signer);
-
-      // Call buyTokens
-      const buyTx = await tokenContract.buyTokens({
-        value: eduAmountInWei,
-      });
-      await buyTx.wait();
-
-      setSuccessMessage("Purchase successful!");
+      // Use the current price from the contract
+      const currentPriceValue = parseFloat(currentPrice);
+      if (currentPriceValue <= 0) return "0";
+      
+      // Simple calculation: ETH / price = tokens
+      // For more accuracy, use the contract's getBuyPrice function
+      const tokens = parseFloat(ethAmount) / currentPriceValue;
+      return tokens.toFixed(4);
     } catch (error) {
-      console.error("Error during purchase:", error);
-      setErrorMessage("Transaction failed. Please try again.");
-    } finally {
-      setIsProcessing(false);
+      console.error("Error calculating tokens:", error);
+      return "0";
     }
   };
 
-  // Handle Sell Transaction
+  // Helper function to calculate ETH for tokens
+  const calculateEthForTokens = async (tokenAmount) => {
+    if (!tokenAmount || parseFloat(tokenAmount) === 0) return "0";
+    
+    try {
+      // Use the current price from the contract
+      const currentPriceValue = parseFloat(currentPrice);
+      if (currentPriceValue <= 0) return "0";
+      
+      // Simple calculation: tokens * price = ETH
+      // For more accuracy, use the contract's getSellPrice function
+      const eth = parseFloat(tokenAmount) * currentPriceValue;
+      return eth.toFixed(4);
+    } catch (error) {
+      console.error("Error calculating ETH:", error);
+      return "0";
+    }
+  };
+
+  // Handle input change for receive amount
+  const handleReceiveAmountChange = (value) => {
+    if (value === '' || /^(\d+\.?\d*|\.\d+)$/.test(value)) {
+      setReceiveAmount(value);
+      setInputMode("receive");
+      setErrorMessage("");
+      
+      // Don't calculate if value is empty
+      if (!value || value === '0') {
+        setSpendAmount("");
+        return;
+      }
+      
+      // Validate input value
+      const inputValue = parseFloat(value);
+      if (isNaN(inputValue) || inputValue <= 0) {
+        setErrorMessage("Please enter a valid amount greater than 0");
+        setSpendAmount("");
+        return;
+      }
+      
+      // Calculate spend amount based on receive amount
+      if (parseFloat(currentPrice) > 0) {
+        let calculatedSpendAmount;
+        
+        if (tradeType === 'buy') {
+          // For buy: tokens to receive * price = EDU to spend
+          calculatedSpendAmount = inputValue * parseFloat(currentPrice);
+          
+          // Check if calculated amount exceeds EDU balance
+          const eduBalanceFloat = parseFloat(eduBalance);
+          if (calculatedSpendAmount > eduBalanceFloat) {
+            setErrorMessage(`Amount exceeds your balance. Your balance is ${eduBalanceFloat.toFixed(4)} EDU`);
+          }
+        } else {
+          // For sell: EDU to receive / price = tokens to sell
+          calculatedSpendAmount = inputValue / parseFloat(currentPrice);
+          
+          // Check if calculated amount exceeds token balance
+          const tokenBalanceFloat = parseFloat(balance);
+          if (calculatedSpendAmount > tokenBalanceFloat) {
+            setErrorMessage(`Amount exceeds your balance. Your balance is ${tokenBalanceFloat.toFixed(4)} ${token?.symbol}`);
+          }
+        }
+        
+        setSpendAmount(calculatedSpendAmount.toFixed(4));
+      } else {
+        setErrorMessage("Unable to calculate: token price is invalid");
+        setSpendAmount("");
+      }
+    }
+  };
+
+  // Update the quick amount buttons to work with both input modes
+  const handleQuickAmount = (percentage) => {
+    if (!connected) return;
+
+    setErrorMessage("");
+    const maxBalance = tradeType === 'buy' ? parseFloat(eduBalance) : parseFloat(balance);
+
+    if (maxBalance <= 0) {
+      setErrorMessage(`You don't have any ${tradeType === 'buy' ? 'ETH' : token?.symbol} to trade`);
+      return;
+    }
+
+    // Calculate the amount based on percentage - don't round
+    const amount = (maxBalance * (percentage / 100)).toString();
+    console.log(`Setting ${percentage}% of balance: ${amount} (max: ${maxBalance})`);
+    
+    // Set the amount and trigger calculations
+    setSpendAmount(amount);
+    handleSpendAmountChange(amount);
+  };
+
+  // Helper function to log available contract methods
+  const logContractMethods = (contract) => {
+    console.log("Available contract methods:");
+    for (const key in contract.interface.fragments) {
+      const fragment = contract.interface.fragments[key];
+      if (fragment.type === 'function') {
+        console.log(`- ${fragment.name}(${fragment.inputs.map(i => `${i.type} ${i.name}`).join(', ')})`);
+      }
+    }
+  };
+
+  // Helper function to format error messages
+  const formatErrorMessage = (error) => {
+    if (!error) return "";
+    
+    // Check if it's the "EDU transfer failed" error
+    if (error.message?.includes("EDU transfer failed")) {
+      return "The contract doesn't have enough ETH to complete this transaction. Try selling a smaller amount.";
+    }
+    
+    // Check if it's a revert error
+    if (error.message?.includes("execution reverted")) {
+      const revertReason = error.message.split("execution reverted:")[1]?.trim() || "Transaction reverted by the contract";
+      return `Transaction failed: ${revertReason}`;
+    }
+    
+    // Check if it's a user rejection
+    if (error.message?.includes("user rejected")) {
+      return "Transaction was rejected in your wallet";
+    }
+    
+    // For other errors, truncate if too long
+    const errorMsg = error.message || error.toString();
+    if (errorMsg.length > 150) {
+      return errorMsg.substring(0, 150) + "...";
+    }
+    
+    return errorMsg;
+  };
+
+  // Update the handleSell function to use the formatErrorMessage helper
   const handleSell = async () => {
-    if (!connected) {
-      setErrorMessage("Please connect your wallet.");
+    if (!connected || !provider || !account) {
+      setErrorMessage("Please connect your wallet first");
       return;
     }
-
-    if (!amount || parseFloat(amount) <= 0) {
-      setErrorMessage("Please enter a valid amount.");
+    
+    if (isProcessing) return;
+    
+    // Validate the contract first
+    const isValidContract = await validateContract(token.contractAddress);
+    if (!isValidContract) {
+      setErrorMessage("Invalid contract address. Cannot perform transaction.");
       return;
     }
-
-    if (parseFloat(amount) > parseFloat(balance)) {
-      setErrorMessage("You don't have enough tokens to sell.");
+    
+    // Check if the amount is valid
+    const sellAmount = parseFloat(spendAmount);
+    const tokenBalanceFloat = parseFloat(balance);
+    
+    if (isNaN(sellAmount) || sellAmount <= 0) {
+      setErrorMessage("Please enter a valid amount greater than 0");
       return;
     }
-
+    
+    // Compare with a small epsilon to account for floating point precision
+    const EPSILON = 1e-15;
+    if (sellAmount > tokenBalanceFloat + EPSILON) {
+      setErrorMessage(`Amount exceeds your balance. Your balance is ${formatTo8DecimalsNoRound(balance)} ${token?.symbol}`);
+      return;
+    }
+    
     try {
       setIsProcessing(true);
       setErrorMessage("");
-      setSuccessMessage("");
-
+      
+      // Get the signer from provider
       const signer = await provider.getSigner();
-
-      const tokenContract = new ethers.Contract(id, HYPE_TOKEN_ABI, signer);
-      const tokenAmountInWei = ethers.parseEther(amount);
-
-      const tx = await tokenContract.sellTokens(tokenAmountInWei);
-      await tx.wait();
-
-      setSuccessMessage("Sell successful!");
-
-      // Refresh the user's balance after selling
-      await fetchBalanceAndPrice();
+      
+      // Create contract instance with signer
+      const tokenContract = new ethers.Contract(
+        token.contractAddress,
+        HYPE_TOKEN_ABI,
+        signer
+      );
+      
+      // Check contract ETH balance first to see if it can pay
+      const contractBalance = await provider.getBalance(token.contractAddress);
+      console.log(`Contract ETH balance: ${ethers.formatEther(contractBalance)} ETH`);
+      
+      // Estimate how much ETH the user would receive
+      let estimatedEthReturn;
+      try {
+        // Try to use the contract's getSellPrice function if available
+        const sellPriceAbi = ["function getSellPrice(uint256) view returns (uint256)"];
+        const priceContract = new ethers.Contract(token.contractAddress, sellPriceAbi, provider);
+        
+        // Get token decimals
+        let decimals = 18;
+        try {
+          const decimalsAbi = ["function decimals() view returns (uint8)"];
+          const decimalsContract = new ethers.Contract(token.contractAddress, decimalsAbi, provider);
+          decimals = await decimalsContract.decimals();
+        } catch (error) {
+          console.warn("Could not get token decimals, using default 18");
+        }
+        
+        // Parse the token amount with the correct decimals
+        const tokenAmountWei = ethers.parseUnits(spendAmount, decimals);
+        
+        // Get the estimated ETH return
+        estimatedEthReturn = await priceContract.getSellPrice(tokenAmountWei);
+        console.log(`Estimated ETH return: ${ethers.formatEther(estimatedEthReturn)} ETH`);
+        
+        // Check if the contract has enough ETH
+        if (estimatedEthReturn > contractBalance) {
+          setErrorMessage("The contract doesn't have enough ETH to complete this transaction. Try selling a smaller amount.");
+          setIsProcessing(false);
+          return;
+        }
+      } catch (estimateError) {
+        console.warn("Could not estimate ETH return:", estimateError.message);
+        // Continue anyway, but log the warning
+      }
+      
+      // Get token decimals
+      let decimals = 18;
+      try {
+        const decimalsAbi = ["function decimals() view returns (uint8)"];
+        const decimalsContract = new ethers.Contract(token.contractAddress, decimalsAbi, provider);
+        decimals = await decimalsContract.decimals();
+        console.log(`Token decimals: ${decimals}`);
+      } catch (error) {
+        console.warn("Could not get token decimals, using default 18:", error.message);
+      }
+      
+      // If selling 100% of balance, use the exact balance value
+      let tokenAmountWei;
+      if (Math.abs(sellAmount - tokenBalanceFloat) < EPSILON) {
+        // Get the exact balance in wei
+        const exactBalanceWei = await tokenContract.balanceOf(account);
+        tokenAmountWei = exactBalanceWei;
+        console.log(`Selling 100% of balance: ${exactBalanceWei.toString()} wei`);
+      } else {
+        // Parse the token amount with the correct decimals
+        tokenAmountWei = ethers.parseUnits(spendAmount, decimals);
+      }
+      
+      console.log(`Selling ${spendAmount} ${token.symbol} tokens (${tokenAmountWei.toString()} wei)`);
+      
+      // Try to estimate gas first to catch errors before sending
+      try {
+        const gasEstimate = await tokenContract.sellTokensForEdu.estimateGas(tokenAmountWei);
+        console.log(`Gas estimate for sell: ${gasEstimate.toString()}`);
+      } catch (gasError) {
+        console.error("Gas estimation failed:", gasError);
+        
+        if (gasError.message.includes("EDU transfer failed")) {
+          setErrorMessage("The contract doesn't have enough ETH to complete this transaction. Try selling a smaller amount.");
+        } else if (gasError.message.includes("execution reverted")) {
+          const revertReason = gasError.message.split("execution reverted:")[1]?.trim() || "Transaction would fail";
+          setErrorMessage(`Cannot execute transaction: ${revertReason}`);
+        } else {
+          setErrorMessage("Transaction would fail. Please try a smaller amount or contact support.");
+        }
+        
+        setIsProcessing(false);
+        return;
+      }
+      
+      // Send sell transaction - using sellTokensForEdu
+      const sellTx = await tokenContract.sellTokensForEdu(tokenAmountWei);
+      
+      // Wait for sell transaction to be mined
+      console.log("Waiting for sell transaction to be mined...");
+      const sellReceipt = await sellTx.wait();
+      console.log("Sell transaction mined:", sellReceipt.hash);
+      
+      // Update balances after successful transaction
+      await fetchBalanceAndPrice(token);
+      
+      // Show success message
+      setSuccessMessage(`Successfully sold ${formatTo8DecimalsNoRound(spendAmount)} ${token.symbol} for ${receiveAmount} ETH!`);
+      setTimeout(() => setSuccessMessage(""), 5000);
+      
+      // Reset form
+      setSpendAmount("");
+      setReceiveAmount("");
+      
     } catch (error) {
-      console.error("Error during sale:", error);
-      setErrorMessage("Transaction failed. Please try again.");
+      console.error("Sell transaction failed:", error);
+      setErrorMessage(formatErrorMessage(error));
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Updated formatNumber function with null/undefined check
+  // Update the handleBuy function to use the formatErrorMessage helper
+  const handleBuy = async () => {
+    if (!connected || !provider || !account) {
+      setErrorMessage("Please connect your wallet first");
+      return;
+    }
+    
+    if (isProcessing) return;
+    
+    try {
+      setIsProcessing(true);
+      setErrorMessage("");
+      
+      // Get the signer from provider
+      const signer = await provider.getSigner();
+      
+      // Parse the spend amount (in native token/ETH)
+      const spendAmountWei = ethers.parseEther(spendAmount);
+    
+      // Create contract instance with signer
+      const tokenContract = new ethers.Contract(
+        token.contractAddress,
+        HYPE_TOKEN_ABI,
+        signer
+      );
+      
+      console.log(`Buying tokens with ${spendAmount} ETH...`);
+      
+      // Send buy transaction - using buyTokensWithEdu which is payable
+      const buyTx = await tokenContract.buyTokensWithEdu({
+        value: spendAmountWei
+      });
+      
+      // Wait for buy transaction to be mined
+      console.log("Waiting for buy transaction to be mined...");
+      const buyReceipt = await buyTx.wait();
+      console.log("Buy transaction mined:", buyReceipt.hash);
+      
+      // Update balances after successful transaction
+      await fetchBalanceAndPrice(token);
+      
+      // Show success message
+      setSuccessMessage(`Successfully purchased ${receiveAmount} ${token.symbol}!`);
+      setTimeout(() => setSuccessMessage(""), 5000);
+      
+      // Reset form
+      setSpendAmount("");
+      setReceiveAmount("");
+      
+    } catch (error) {
+      console.error("Buy transaction failed:", error);
+      setErrorMessage(formatErrorMessage(error));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Improved formatNumber function to handle scientific notation and large numbers
   const formatNumber = (num) => {
     if (num === undefined || num === null) return '0';
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+    // Convert to number if it's a string
+    const numValue = typeof num === 'string' ? parseFloat(num) : num;
+
+    // Handle invalid numbers
+    if (isNaN(numValue)) return '0';
+
+    // Format based on size
+    if (numValue >= 1e24) return (numValue / 1e24).toFixed(2) + 'Y'; // Yotta (septillion)
+    if (numValue >= 1e21) return (numValue / 1e21).toFixed(2) + 'Z'; // Zetta (sextillion)
+    if (numValue >= 1e18) return (numValue / 1e18).toFixed(2) + 'E'; // Exa (quintillion)
+    if (numValue >= 1e15) return (numValue / 1e15).toFixed(2) + 'P'; // Peta (quadrillion)
+    if (numValue >= 1e12) return (numValue / 1e12).toFixed(2) + 'T'; // Trillion
+    if (numValue >= 1e9) return (numValue / 1e9).toFixed(2) + 'B'; // Billion
+    if (numValue >= 1e6) return (numValue / 1e6).toFixed(2) + 'M'; // Million
+    if (numValue >= 1e3) return (numValue / 1e3).toFixed(2) + 'K'; // Thousand
+
+    // For smaller numbers, use regular comma formatting
+    return numValue.toLocaleString('en-US', {
+      maximumFractionDigits: numValue >= 100 ? 0 : 2
+    });
   };
 
   // Calculate time ago
-  const calculateTimeAgo = (timestamp) => {
+  const calculateTimeAgo = (createdOn) => {
+    if (!createdOn) return "__h";
+
     const now = new Date();
-    const createdDate = new Date(timestamp * 1000);
-    const diffTime = Math.abs(now - createdDate);
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays > 30) {
-      const diffMonths = Math.floor(diffDays / 30);
-      return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
-    } else if (diffDays > 0) {
-      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
-    } else {
-      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-      return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-    }
+    // Check if timestamp is in milliseconds (13 digits) or seconds (10 digits)
+    const createdDate = new Date(
+      createdOn.toString().length > 10
+        ? parseInt(createdOn) // Already in milliseconds
+        : parseInt(createdOn) * 1000 // Convert seconds to milliseconds
+    );
+
+    // Check if date is valid
+    if (isNaN(createdDate.getTime())) return "NaN$";
+
+    const diff = now - createdDate; // Time difference in milliseconds
+
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const months = Math.floor(days / 30);
+
+    if (months > 0) return `${months}m`;
+    if (days > 0) return `${days}d`;
+    if (hours > 0) return `${hours}h`;
+    if (minutes > 0) return `${minutes}m`;
+    return `${seconds}s`;
   };
+
 
   // Truncate address
   const truncateAddress = (address) => {
@@ -489,15 +1109,10 @@ const CoinDetailPage = () => {
   // Handle trade
   const handleTrade = () => {
     if (!amount || parseFloat(amount) <= 0 || !token) return;
-    
+
     // Use a simple alert for now, will be replaced with actual API call in production
     alert(`Successfully ${tradeType === 'buy' ? 'bought' : 'sold'} ${amount} ${tradeType === 'buy' ? 'USD worth of' : ''} ${token.symbol}`);
     setAmount('');
-  };
-
-  // Handle quick amount buttons
-  const handleQuickAmount = (value) => {
-    setAmount(value);
   };
 
   // Function to fetch price history data
@@ -508,10 +1123,10 @@ const CoinDetailPage = () => {
       // In a real application, this would be your actual API endpoint
       // For now, we'll simulate an API call
       console.log(`Fetching price history for token ${tokenId}, period ${period}`);
-      
+
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // Use our fallback generator to simulate API data
       const data = generateFallbackPriceHistory(tokenId, token?.price, token?.priceChange24h, period);
       setChartLoading(false);
@@ -529,8 +1144,8 @@ const CoinDetailPage = () => {
     const idNum = parseInt(id) || 1;
     const seed = idNum * 13;
     let days;
-    
-    switch(period) {
+
+    switch (period) {
       case '90D':
         days = 90;
         break;
@@ -543,29 +1158,29 @@ const CoinDetailPage = () => {
       default:
         days = 30; // Default 30D
     }
-    
+
     // Default to reasonable values if not provided
     const price = parseFloat(currentPrice) || 1.0;
     const changePercent = parseFloat(priceChange) || 5.0;
-    
+
     const priceData = [];
     const labels = [];
     const timestamps = [];
-    
+
     // Create a somewhat realistic price trend
     const dailyChangePercent = changePercent / 30; // Distribute change over a month
     const volatilityFactor = period === 'All' ? 1.5 : 1; // More volatility for longer timeframes
     const startPrice = price / Math.pow(1 + (dailyChangePercent / 100), days / volatilityFactor);
-    
+
     const now = new Date();
     let simulatedPrice = startPrice;
-    
+
     // Generate day labels and prices
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       timestamps.push(date.getTime());
-      
+
       // Format labels based on time period
       let label;
       if (period === '1Y' || period === 'All') {
@@ -580,20 +1195,20 @@ const CoinDetailPage = () => {
           label = '';
         }
       }
-      
+
       labels.push(label);
-      
+
       // Generate a price with randomness following the overall trend
       const volatilityFactor = 0.5 + (Math.sin(seed + i) * 0.5);
       const dayChange = (dailyChangePercent / 100) * volatilityFactor;
-      
+
       // Add randomness
       const randomFactor = period === 'All' ? 0.04 : 0.02;
-      simulatedPrice = simulatedPrice * (1 + dayChange + ((Math.sin(seed * i) * randomFactor))); 
-      
+      simulatedPrice = simulatedPrice * (1 + dayChange + ((Math.sin(seed * i) * randomFactor)));
+
       priceData.push(parseFloat(simulatedPrice.toFixed(6)));
     }
-    
+
     return {
       labels,
       timestamps,
@@ -604,17 +1219,17 @@ const CoinDetailPage = () => {
   // Create or update the chart
   const updateChart = (data) => {
     if (!chartRef.current || !data || !data.prices || !data.labels) return;
-    
+
     if (chartInstance.current) {
       chartInstance.current.destroy();
     }
-    
+
     const ctx = chartRef.current.getContext('2d');
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    
+
     // Use the exact same logic for gradient determination
     const isPriceUp = data.prices[data.prices.length - 1] >= data.prices[0];
-    
+
     if (isPriceUp) {
       gradient.addColorStop(0, 'rgba(0, 246, 170, 0.4)');
       gradient.addColorStop(1, 'rgba(0, 246, 170, 0)');
@@ -622,7 +1237,7 @@ const CoinDetailPage = () => {
       gradient.addColorStop(0, 'rgba(255, 58, 58, 0.4)');
       gradient.addColorStop(1, 'rgba(255, 58, 58, 0)');
     }
-    
+
     chartInstance.current = new Chart(ctx, {
       type: 'line',
       data: {
@@ -670,7 +1285,7 @@ const CoinDetailPage = () => {
               font: {
                 size: 10
               },
-              callback: function(value) {
+              callback: function (value) {
                 return '$' + value.toFixed(2);
               }
             }
@@ -693,7 +1308,7 @@ const CoinDetailPage = () => {
             borderWidth: 1,
             displayColors: false,
             callbacks: {
-              label: function(context) {
+              label: function (context) {
                 return `$${context.raw.toFixed(6)}`;
               }
             }
@@ -708,10 +1323,10 @@ const CoinDetailPage = () => {
     if (token) {
       // Fetch price history data when component loads or when token/time period changes
       const loadPriceHistory = async () => {
-        const data = await fetchPriceHistory(token.id, timePeriod);
+        const data = await fetchPriceHistory(token.contractAddress, timePeriod);
         setChartData(data);
       };
-      
+
       loadPriceHistory();
     }
   }, [token, timePeriod]);
@@ -723,32 +1338,195 @@ const CoinDetailPage = () => {
     }
   }, [chartData]);
 
-  // Fetch chart data
+  // Function to fetch chart data
   const fetchChartData = async (tokenId, currentPrice, priceChange, period) => {
+    setChartLoading(true);
+    setChartError(null);
     try {
-      // Replace with your actual price history API endpoint
-      const response = await fetch(`/api/tokens/${tokenId}/price-history?period=${period}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch price history');
-      }
-      
-      const data = await response.json();
+      // In a real application, this would be your actual API endpoint
+      // For now, we'll use our generator function
+      const data = generatePriceHistory(tokenId, currentPrice, priceChange);
       setChartData(data);
-      updateChart(data);
+      setChartLoading(false);
     } catch (error) {
-      console.error('Error fetching price history:', error);
-      // If API fails, we could fall back to generating synthetic data
-      // or just show an error in the chart area
+      console.error("Error fetching price history:", error);
+      setChartError("Failed to load price data");
+      setChartLoading(false);
     }
   };
 
-  // Update chart when time period changes
+  // Update balance when wallet connection changes
   useEffect(() => {
-    if (token) {
-      fetchChartData(token.id, token.price, token.priceChange24h, timePeriod);
+    if (connected && provider && account && token) {
+      console.log("Wallet connected, fetching balances");
+      fetchBalanceAndPrice(token);
     }
-  }, [timePeriod, token]);
+  }, [connected, provider, account, token?.id]);
+
+  // Set up a price update interval
+  useEffect(() => {
+    if (token && provider) {
+      // Initial price fetch
+      const updatePrice = async () => {
+        const price = await fetchTokenPrice(token.contractAddress);
+        if (price !== currentPrice) {
+          setCurrentPrice(price);
+          // Also update the token object
+          setToken(prevToken => ({
+            ...prevToken,
+            price: price
+          }));
+        }
+      };
+
+      // Update price immediately
+      updatePrice();
+
+      // Set up interval to update price every 30 seconds
+      const intervalId = setInterval(updatePrice, 30000);
+
+      // Clean up interval on unmount
+      return () => clearInterval(intervalId);
+    }
+  }, [token?.id, provider]);
+
+  // Determine if trade button should be disabled
+  useEffect(() => {
+    // Button should be enabled when:
+    // 1. Wallet is connected
+    // 2. Not currently processing a transaction
+    // 3. Valid spend amount is entered (greater than 0)
+    // 4. No error message is present
+    // 5. User has sufficient balance
+
+    const spendAmountNum = parseFloat(spendAmount);
+    const receiveAmountNum = parseFloat(receiveAmount);
+    console.log("spendAmountNum", spendAmountNum);
+    console.log("receiveAmountNum", receiveAmountNum);
+
+    const hasValidAmount = !isNaN(spendAmountNum) && spendAmountNum > 0 &&
+      !isNaN(receiveAmountNum) && receiveAmountNum > 0;
+
+    const hasBalance = tradeType === 'buy'
+      ? spendAmountNum <= parseFloat(eduBalance)
+      : spendAmountNum <= parseFloat(balance);
+
+    const shouldBeDisabled = !connected ||
+      isProcessing ||
+      !hasValidAmount ||
+      !hasBalance ||
+      errorMessage !== "";
+
+    setIsTradeButtonDisabled(shouldBeDisabled);
+
+    console.log("connected", hasValidAmount, !hasBalance );
+    // If there's a balance issue but no error message set yet, set one
+    if (connected && hasValidAmount && !hasBalance && errorMessage === "") {
+      setErrorMessage(`Insufficient ${tradeType === 'buy' ? 'EDU' : token?.symbol} balance`);
+    }
+
+  }, [connected, isProcessing, spendAmount, receiveAmount, eduBalance, balance, tradeType, errorMessage, token]);
+
+  // Function to copy text to clipboard
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        // Show a temporary success message
+        setSuccessMessage("Copied to clipboard!");
+        setTimeout(() => {
+          setSuccessMessage("");
+        }, 2000);
+      })
+      .catch((err) => {
+        console.error('Failed to copy: ', err);
+        setErrorMessage("Failed to copy to clipboard");
+        setTimeout(() => {
+          setErrorMessage("");
+        }, 2000);
+      });
+  };
+
+  // Enhanced function to fetch token balance with proper decimal handling
+  const fetchTokenBalance = async (tokenAddress, userAddress) => {
+    if (!provider || !tokenAddress || !userAddress) {
+      console.log("Missing requirements for fetching token balance");
+      return null;
+    }
+    
+    console.log(`Fetching token balance for ${userAddress} on contract ${tokenAddress}`);
+    
+    try {
+      // First, validate the contract
+      const isValid = await validateContract(tokenAddress);
+      if (!isValid) {
+        console.error("Invalid token contract");
+        return null;
+      }
+      
+      // Try with standard ERC20 balanceOf and decimals methods
+      try {
+        const erc20Interface = [
+          "function balanceOf(address) view returns (uint256)",
+          "function decimals() view returns (uint8)"
+        ];
+        
+        const tokenContract = new ethers.Contract(
+          tokenAddress,
+          erc20Interface,
+          provider
+        );
+        
+        // Get balance
+        const balance = await tokenContract.balanceOf(userAddress);
+        console.log("Standard balanceOf succeeded:", balance.toString());
+        
+        // Try to get decimals (default to 18 if it fails)
+        let decimals = 18;
+        try {
+          decimals = await tokenContract.decimals();
+          console.log(`Token decimals: ${decimals}`);
+        } catch (decimalError) {
+          console.warn("Could not get token decimals, using default 18");
+        }
+        
+        // Format the balance according to decimals - don't round
+        const formattedBalance = ethers.formatUnits(balance, decimals);
+        console.log(`Token balance: ${formattedBalance} (using ${decimals} decimals)`);
+        
+        return formattedBalance;
+      } catch (erc20Error) {
+        console.warn("Standard ERC20 balanceOf failed:", erc20Error.message);
+      }
+      
+      // If all methods fail, return null
+      console.error("All balance fetching methods failed");
+      return null;
+    } catch (error) {
+      console.error("Error in fetchTokenBalance:", error);
+      return null;
+    }
+  };
+
+  // Helper function to format a number to exactly 8 decimal places without rounding
+  const formatTo8DecimalsNoRound = (value) => {
+    if (!value) return "0.00000000";
+    
+    // Convert to string if it's not already
+    const valueStr = value.toString();
+    
+    // Check if it contains a decimal point
+    if (valueStr.includes('.')) {
+      const [whole, decimal] = valueStr.split('.');
+      // Pad with zeros if needed, or truncate to 8 decimal places
+      const paddedDecimal = decimal.length >= 8 
+        ? decimal.substring(0, 8) 
+        : decimal.padEnd(8, '0');
+      return `${whole}.${paddedDecimal}`;
+    } else {
+      // If no decimal point, add .00000000
+      return `${valueStr}.00000000`;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -770,7 +1548,7 @@ const CoinDetailPage = () => {
         <div className="go-back-container">
           <button onClick={() => router.push('/board')} className="back-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
+              <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
             Back to All Tokens
           </button>
@@ -784,9 +1562,11 @@ const CoinDetailPage = () => {
   // Determine if price is up
   const isPriceUp = parseFloat(token.priceChange24h) >= 0;
   const priceChangeSymbol = isPriceUp ? '+' : '';
-  
+
   // Calculate supply percentage
-  const circulationPercentage = (token.circulatingSupply / token.maxSupply) * 100;
+  const circulationPercentage = (token.tokensSold / token.totalSupply) * 100;
+
+  console.log("Token:", token);
 
   return (
     <div className="token-page-container">
@@ -794,17 +1574,9 @@ const CoinDetailPage = () => {
       <div className="background-effects">
         <div className="digital-pulse"></div>
       </div>
-      
+
       <Header />
 
-      <div className="go-back-container">
-        <button onClick={() => router.push('/board')} className="back-button">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-          Back to All Tokens
-        </button>
-      </div>
 
       <div className="content-wrapper">
         <div className="left-section">
@@ -812,26 +1584,23 @@ const CoinDetailPage = () => {
           <div className="token-details-section">
             <div className="details-container">
               <div className="token-image-container">
-                <img 
-                  src={token.image || "/default_image.png"} 
-                  alt={token.name} 
-                  className="token-detail-image" 
+                <img
+                  src={token.image || "/default_image.png"}
+                  alt={token.name}
+                  className="token-detail-image"
                 />
               </div>
-              
+
               <div className="token-text-details">
                 <h1>{token.name} <span className="token-detail-symbol">({token.symbol})</span></h1>
-                
-                <div className="price-container">
-                  <div className="current-price">${token.price}</div>
-                  <div className={`price-change ${isPriceUp ? 'positive' : 'negative'}`}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d={isPriceUp ? "M7 13l5-5 5 5" : "M7 10l5 5 5-5"} />
-                    </svg>
-                    {priceChangeSymbol}{token.priceChange24h}%
-                  </div>
+
+                <div className="price-display">
+                  <span className="price-label">Current Price:</span>
+                  <span className="price-value">
+                    1 {token?.symbol} = {parseFloat(currentPrice).toFixed(6)} EDU
+                  </span>
                 </div>
-                
+
                 <div className="additional-details">
                   <div className="detail-item">
                     <div className="detail-label">Market Cap</div>
@@ -841,84 +1610,108 @@ const CoinDetailPage = () => {
                     <div className="detail-label">24h Volume</div>
                     <div className="detail-value">${formatNumber(token.dailyVolume)}</div>
                   </div>
-                  <div className="detail-item">
-                    <div className="detail-label">Blockchain</div>
-                    <div className="detail-value">{token.chain}</div>
-                  </div>
                 </div>
               </div>
             </div>
-            
+
             <div className="creator-section">
               <div className="creator-info">
-                <span className="creator-label">Creator:</span> 
-                <span className="creator-address" title={token.creator} onClick={() => navigator.clipboard.writeText(token.creator)}>
-                  {truncateAddress(token.creator)}
-                </span>
-                <span className="creation-time">Created {calculateTimeAgo(token.createdOn)}</span>
+                <div className="creator-header">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="creator-icon">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <span className="creator-label">Creator</span>
+                </div>
+                
+                <div className="creator-address-container" onClick={() => copyToClipboard(token.creatorAddress)}>
+                  <span className="address-dot"></span>
+                  <span className="creator-address" title={token.creatorAddress}>
+                    {truncateAddress(token.creatorAddress)}
+                  </span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="copy-icon">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </div>
+                
+                <div className="creation-time-container">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="time-icon">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span className="creation-time">Created {calculateTimeAgo(token.createdAt)} ago</span>
+                </div>
               </div>
               
-              <div className="token-links">
-                {token.website && 
-                  <a href={token.website} target="_blank" rel="noopener noreferrer" className="token-link website">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
-                      <path d="M15 3h6v6" />
-                      <path d="M10 14L21 3" />
-                    </svg>
-                    <span>Website</span>
-                  </a>
-                }
-                {token.twitter && 
-                  <a href={token.twitter} target="_blank" rel="noopener noreferrer" className="token-link twitter">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" />
-                    </svg>
-                    <span>Twitter</span>
-                  </a>
-                }
-                {token.telegram && 
-                  <a href={token.telegram} target="_blank" rel="noopener noreferrer" className="token-link telegram">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21.5 2L2 10l7 4m7 8l-3-9 9-5m-9 5V22" />
-                    </svg>
-                    <span>Telegram</span>
-                  </a>
-                }
-              </div>
+              {token.social && (
+                <div className="social-links">
+                  {token.social.website && (
+                    <a href={token.social.website} target="_blank" rel="noopener noreferrer" className="social-link website">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                      </svg>
+                    </a>
+                  )}
+                  {token.social.twitter && (
+                    <a href={token.social.twitter} target="_blank" rel="noopener noreferrer" className="social-link twitter">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                      </svg>
+                    </a>
+                  )}
+                  {token.social.telegram && (
+                    <a href={token.social.telegram} target="_blank" rel="noopener noreferrer" className="social-link telegram">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21.5 2L2 10l7 4m7 8l-3-9 9-5m-9 5V22"></path>
+                      </svg>
+                    </a>
+                  )}
+                  {token.social.discord && (
+                    <a href={token.social.discord} target="_blank" rel="noopener noreferrer" className="social-link discord">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M18 9a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v6a5 5 0 0 0 5 5h4"></path>
+                        <circle cx="16" cy="16" r="3"></circle>
+                      </svg>
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
-            
-            <div className="token-description">
+
+            <div className="token-description-details">
               <p>{token.description}</p>
             </div>
-            
+
             <div className="progress-section">
               <h4>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 6v6l4 2" />
                 </svg>
-                Circulating Supply
+                Bonding Curve Progress
               </h4>
               <div className="supply-numbers">
                 <div className="supply-fractions">
-                  <span className="circulating-amount">{formatNumber(token.circulatingSupply || 3885867227)}</span>
+                  <span className="circulating-amount">{formatNumber(token.tokensSold )}</span>
                   <span className="supply-divider">/</span>
-                  <span className="max-amount">{formatNumber(token.maxSupply || 10000000000)}</span>
+                  <span className="max-amount">{formatNumber(token.totalSupply)}</span>
                 </div>
                 <div className="supply-percentage-badge">
                   {circulationPercentage.toFixed(2)}%
                 </div>
               </div>
               <div className="supply-progress-container">
-                <div 
-                  className="supply-progress-bar" 
+                <div
+                  className="supply-progress-bar"
                   style={{ width: `${circulationPercentage}%` }}
                 ></div>
               </div>
             </div>
           </div>
-          
+
           {/* Enhanced Chart Container */}
           <div className="chart-contract-row">
             {/* Chart Section - Takes width proportional to left section above */}
@@ -932,25 +1725,25 @@ const CoinDetailPage = () => {
                   Price History
                 </h3>
                 <div className="time-period-selector">
-                  <button 
+                  <button
                     className={`time-period-button ${timePeriod === '30D' ? 'active' : ''}`}
                     onClick={() => setTimePeriod('30D')}
                   >
                     30D
                   </button>
-                  <button 
+                  <button
                     className={`time-period-button ${timePeriod === '90D' ? 'active' : ''}`}
                     onClick={() => setTimePeriod('90D')}
                   >
                     90D
                   </button>
-                  <button 
+                  <button
                     className={`time-period-button ${timePeriod === '1Y' ? 'active' : ''}`}
                     onClick={() => setTimePeriod('1Y')}
                   >
                     1Y
                   </button>
-                  <button 
+                  <button
                     className={`time-period-button ${timePeriod === 'All' ? 'active' : ''}`}
                     onClick={() => setTimePeriod('All')}
                   >
@@ -962,82 +1755,150 @@ const CoinDetailPage = () => {
                 <canvas ref={chartRef}></canvas>
               </div>
               <div className="legend-container">
-                <span>{timePeriod === 'All' ? 'All time' : timePeriod} • Price in USD</span>
+                <span>{timePeriod === 'All' ? 'All time' : timePeriod} • Price in EDU</span>
               </div>
             </div>
-            
-            
+
+
           </div>
         </div>
-        
-        
+
+
         <div className="right-section">
           {/* Enhanced Trade Section */}
-          <div className="trade-section">
-            <h3>Trade Token</h3>
-            <div className="trade-box">
-              <div className="trade-tabs">
+          <div className="token-trade-section">
+            <h2 className="section-title">Trade {token?.symbol}</h2>
+            
+            <div className="trade-container">
+              <div className="trade-type-selector">
                 <button 
-                  className={`trade-tab ${tradeType === 'buy' ? 'active' : ''}`}
-                  onClick={() => setTradeType('buy')}
+                  className={`trade-type-button ${tradeType === 'buy' ? 'active' : ''}`}
+                  onClick={() => handleTradeTypeChange('buy')}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
                   Buy
                 </button>
                 <button 
-                  className={`trade-tab ${tradeType === 'sell' ? 'active' : ''}`}
-                  onClick={() => setTradeType('sell')}
+                  className={`trade-type-button ${tradeType === 'sell' ? 'active' : ''}`}
+                  onClick={() => handleTradeTypeChange('sell')}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M5 12h14" />
-                  </svg>
                   Sell
                 </button>
               </div>
               
-              <div className="amount-container">
-                <label>Amount</label>
-                <div className="amount-input-wrapper">
-                  <input
-                    type="number"
-                    value={amount}
-                    onChange={handleAmountChange}
-                    placeholder="0"
-                    min="0"
-                    max="100"
-                  />
-                  <span className="percentage-symbol">%</span>
+              <div className="price-display">
+                <span className="price-label">Current Price:</span>
+                <span className="price-value">
+                  1 {token?.symbol} = {parseFloat(currentPrice).toFixed(6)} ETH
+                </span>
+              </div>
+              
+              <div className="trade-form">
+                <div className="trade-input-group">
+                  <label className="trade-label">
+                    {tradeType === 'buy' ? 'You Spend (EDU)' : `You Sell (${token?.symbol})`}
+                  </label>
+                  <div className="trade-input-container">
+                    <input
+                      type="text"
+                      className="trade-input"
+                      value={spendAmount}
+                      onChange={(e) => handleSpendAmountChange(e.target.value)}
+                      placeholder="0"
+                      disabled={!connected || isProcessing}
+                    />
+                    <span className="trade-input-suffix">
+                      {tradeType === 'buy' ? 'EDU' : token?.symbol}
+                    </span>
+                  </div>
+                  
+                  {connected && (
+                    <div className="balance-info">
+                      Balance: {tradeType === 'buy' 
+                        ? `${parseFloat(eduBalance).toFixed(4)} EDU` 
+                        : `${formatTo8DecimalsNoRound(balance)} ${token?.symbol}`}
+                    </div>
+                  )}
+                  
+                  {connected && (
+                    <div className="percentage-buttons">
+                      {[25, 50, 75, 100].map((percentage) => (
+                        <button
+                          key={percentage}
+                          className="percentage-button"
+                          onClick={() => handleQuickAmount(percentage)}
+                          disabled={isProcessing}
+                        >
+                          {percentage}%
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-              
-              <div className="quick-amount-buttons">
-                <button onClick={() => handleQuickAmount(25)}>25%</button>
-                <button onClick={() => handleQuickAmount(50)}>50%</button>
-                <button onClick={() => handleQuickAmount(75)}>75%</button>
-                <button onClick={() => handleQuickAmount(100)}>100%</button>
-              </div>
-              
-              <div className="token-value">
-                <div className="value-label">Estimated value:</div>
-                <div className="value-amount">${getEstimatedValue()}</div>
-              </div>
-              
-              <button 
-                className={`trade-button ${tradeType}`}
-                onClick={handleTrade}
-                disabled={!amount || isNaN(amount) || parseFloat(amount) <= 0}
-              >
-                {tradeType === 'buy' ? 'Buy' : 'Sell'} {token.symbol}
-              </button>
-              
-              <div className="fee-info">
-                Network fee: 0.5% • Slippage: 1%
+                
+                <div className="trade-input-group">
+                  <label className="trade-label">
+                    {tradeType === 'buy' ? `You Receive (${token?.symbol})` : 'You Receive (EDU)'}
+                  </label>
+                  <div className="trade-input-container">
+                    <input
+                      type="text"
+                      className="trade-input"
+                      value={receiveAmount}
+                      onChange={(e) => handleReceiveAmountChange(e.target.value)}
+                      placeholder="0"
+                      disabled={!connected || isProcessing}
+                    />
+                    <span className="trade-input-suffix">
+                      {tradeType === 'buy' ? token?.symbol : 'EDU'}
+                    </span>
+                  </div>
+                </div>
+                
+                {errorMessage && (
+                  <div className="error-message">
+                    <div className="error-content">
+                      {errorMessage}
+                    </div>
+                    <button 
+                      className="error-close-button"
+                      onClick={() => setErrorMessage("")}
+                      aria-label="Close error message"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+                
+                {successMessage && (
+                  <div className="success-message">
+                    {successMessage}
+                  </div>
+                )}
+                
+                <button
+                  className={`trade-button ${tradeType}`}
+                  onClick={tradeType === 'buy' ? handleBuy : handleSell}
+                  disabled={isTradeButtonDisabled || isProcessing || !connected}
+                >
+                  {isProcessing ? (
+                    <div className="button-loading">
+                      <div className="loading-spinner"></div>
+                      <span>Processing...</span>
+                    </div>
+                  ) : (
+                    `${tradeType === 'buy' ? 'Buy' : 'Sell'} ${token?.symbol}`
+                  )}
+                </button>
+                
+                {!connected && (
+                  <div className="connect-wallet-message">
+                    Please connect your wallet to trade
+                  </div>
+                )}
               </div>
             </div>
           </div>
-          
+
           {/* Enhanced Holders Section */}
           <div className="holders-container">
             <h3>Top Token Holders</h3>
@@ -1065,7 +1926,7 @@ const CoinDetailPage = () => {
                 </svg>
                 Contract Information
               </h4>
-              
+
               <div className="contract-rows">
                 <div className="contract-row">
                   <div className="contract-label">
@@ -1076,28 +1937,28 @@ const CoinDetailPage = () => {
                     Contract Address
                   </div>
                   <div className="contract-value">
-                    <span 
-                      className="contract-address" 
-                      title={token.contract || "0x1d23...2e83"}
-                      onClick={() => copyToClipboard(token.contract || "0x1d232e83")}
+                    <span
+                      className="contract-address"
+                      title={token.contractAddress}
+                      onClick={() => copyToClipboard(token.contractAddress)}
                     >
-                      {truncateAddress(token.contract || "0x1d232e83")}
+                      {(token.contractAddress)}
                     </span>
-                    <button 
-                      className="copy-button" 
+                    <button
+                      className="copy-button"
                       onClick={() => {
-                        copyToClipboard(token.contract || "0x1d232e83");
+                        copyToClipboard(token.contractAddress);
                       }}
                       title="Copy contract address"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                       </svg>
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="contract-row">
                   <div className="contract-label">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1106,44 +1967,30 @@ const CoinDetailPage = () => {
                     Total Supply
                   </div>
                   <div className="contract-value">
-                    <span className="highlight-value">{formatNumber(token.totalSupply || 7743756632)}</span>
+                    <span className="highlight-value">{formatNumber(token.totalSupply)}</span>
                   </div>
                 </div>
-                
-                <div className="contract-row">
-                  <div className="contract-label">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="1 6 1 22 23 22 23 6" />
-                      <path d="M18 6L12 1 6 6" />
-                      <line x1="12" y1="10" x2="12" y2="18" />
-                      <line x1="8" y1="14" x2="16" y2="14" />
-                    </svg>
-                    Transactions
-                  </div>
-                  <div className="contract-value">
-                    <span className="highlight-value">{formatNumber(token.transactions || 79799)}</span>
-                  </div>
-                </div>
-                
+
+
                 <div className="contract-row">
                   <div className="contract-label">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" />
                       <line x1="2" y1="12" x2="22" y2="12" />
-                      <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                     </svg>
                     Explorer
                   </div>
                   <div className="contract-value">
-                    <a 
-                      href={`https://etherscan.io/token/${token.contract || "0x1d232e83"}`} 
-                      target="_blank" 
+                    <a
+                      href={`https://edu-chain-testnet.blockscout.com/token/${token.contractAddress}`}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="explorer-link"
                     >
-                      View on Etherscan
+                      View
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                         <path d="M15 3h6v6" />
                         <path d="M10 14L21 3" />
                       </svg>
