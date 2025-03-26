@@ -19,11 +19,7 @@ const Header = () => {
                 {/* Logo */}
                 <Link href="/" className="logo-link">
                     <div className="logo-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#00F6AA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M2 17L12 22L22 17" stroke="#00F6AA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M2 12L12 17L22 12" stroke="#00F6AA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
+                       <img className="logo-icon" src="/hype.png" alt="Hype.mba" />
                     </div>
                     <span className="logo-text">Hype.mba</span>
                 </Link>
@@ -40,6 +36,11 @@ const Header = () => {
                         <Link href="/create" className={`nav-link ${pathname === '/create' ? 'active' : ''}`}>
                             Create
                         </Link>
+                        {connected && (
+                            <Link href="/dashboard" className={`nav-link ${pathname === '/dashboard' ? 'active' : ''}`}>
+                                Dashboard
+                            </Link>
+                        )}
                         <button 
                             onClick={() => setShowHowItWorks(true)} 
                             className={`nav-link ${pathname === '/faq' ? 'active' : ''}`}
