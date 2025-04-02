@@ -2,28 +2,202 @@
 
 import { useState, useRef, useEffect } from "react";
 import Header from "@/components/Header";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUpload } from "@fortawesome/free-solid-svg-icons";
 import { ethers } from "ethers";
 import "../../styles/CreatePage.css";
+import "../../styles/HowItWorksModal.css";
 import { useWallet } from "@/context/WalletContext";
+import { toast } from "react-hot-toast";
+
+// Custom styles for BuyModal inside CreatePage
+const customStyles = {
+  modalInput: {
+    background: 'rgba(13, 14, 33, 0.6)',
+    border: '1px solid rgba(0, 246, 170, 0.3)',
+    borderRadius: '8px',
+    padding: '10px 12px',
+    marginTop: '10px',
+    marginBottom: '15px',
+    width: '100%',
+    color: '#fff',
+    position: 'relative',
+  },
+  gradientText: {
+    background: 'linear-gradient(90deg, #00F6AA 0%, #02A4FF 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    fontWeight: 'bold'
+  },
+  estimateText: {
+    fontSize: '1rem',
+    marginTop: '8px',
+    color: '#fff'
+  }
+};
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const CONTRACT_ABI = [
   {
     "inputs": [
+      { 
+        "components": [
       { "internalType": "string", "name": "name", "type": "string" },
       { "internalType": "string", "name": "symbol", "type": "string" },
       { "internalType": "string", "name": "description", "type": "string" },
       { "internalType": "string", "name": "image", "type": "string" },
       { "internalType": "string", "name": "social", "type": "string" }
+        ],
+        "internalType": "struct HypeTokenFactory.TokenParams",
+        "name": "params",
+        "type": "tuple"
+      }
     ],
     "name": "createToken",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "tokenAddress", "type": "address" }
+    ],
+    "name": "buyInitialTokens",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "hypeTokenImplementation",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_feeCollector", "type": "address" }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "creator", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "tokenAddress", "type": "address" }
+    ],
+    "name": "TokenCreated",
+    "type": "event"
+  }
+];
+
+// Add HypeToken ABI for direct interaction with the token contract
+const HYPETOKEN_ABI = [
+  {
+    "inputs": [],
+    "name": "buyTokens",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
   }
 ];
+
+// Update BuyModal component to match HowItWorksModal design
+const BuyModal = ({ 
+  name, 
+  initialBuyAmount, 
+  setInitialBuyAmount, 
+  calculateEstimatedTokens, 
+  estimatedTokens, 
+  handleFinalSubmit, 
+  isLoading,
+  onClose
+}) => (
+  <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-glow"></div>
+
+      <button className="modal-close-btn" onClick={onClose}>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </button>
+
+      <div className="modal-header">
+        <h2 className="modal-title">Create <span className="gradient-text">{name}</span> Token</h2>
+        <div className="title-decoration"></div>
+      </div>
+      
+      <div className="modal-steps-container">
+        <div className="step-card">
+          <div className="step-content">
+            <h3 className="step-title">Initial Token Purchase</h3>
+            <p className="step-description">
+              <span style={customStyles.gradientText}>Jumpstart your token</span> by making the first purchase! The initial buy sets the starting price and gives your token immediate liquidity. 
+              <br/><br/>
+              <span style={{color: '#00F6AA', fontWeight: 'bold'}}>Pro tip:</span> Starting with a small amount (0.005-0.01 EDU) creates the perfect entry point for your community.
+            </p>
+            
+            <div className="input-wrapper" style={customStyles.modalInput}>
+              <input
+                type="number"
+                value={initialBuyAmount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || (parseFloat(value) >= 0 && !isNaN(parseFloat(value)))) {
+                    setInitialBuyAmount(value);
+                    calculateEstimatedTokens(value);
+                  }
+                }}
+                placeholder="0.0 (optional)"
+                step="0.000001"
+                min="0"
+                max="0.01"
+                autoFocus
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  width: 'calc(100% - 45px)',
+                  outline: 'none'
+                }}
+              />
+              <span className="currency-label" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#00F6AA' }}>EDU</span>
+            </div>
+
+            {initialBuyAmount && (
+              <p style={customStyles.estimateText}>
+                Estimated tokens: <span style={customStyles.gradientText}>{estimatedTokens.toString()}</span>
+              </p>
+            )}
+            
+            <p className="tip-text" style={{ fontSize: '0.85rem', marginTop: '15px', color: '#ccc' }}>
+              Total cost: <span style={customStyles.gradientText}>{initialBuyAmount ? parseFloat(initialBuyAmount).toFixed(6) : '0'}</span> EDU
+            </p>
+          </div>
+          <div className="step-decoration">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <path d="M5 5L35 35M5 35L35 5" stroke="rgba(0, 246, 170, 0.1)" strokeWidth="2"/>
+            </svg>
+          </div>
+        </div>
+        
+      </div>
+
+      <button 
+        onClick={handleFinalSubmit}
+        disabled={isLoading}
+        className="launch-btn"
+      >
+        <span className="btn-text">{isLoading ? "Processing..." : "Create Token"}</span>
+        <div className="btn-glow"></div>
+        <span className="btn-icon">🚀</span>
+      </button>
+    </div>
+  </div>
+);
+
 
 const CreatePage = () => {
   const [name, setName] = useState("");
@@ -70,6 +244,14 @@ const CreatePage = () => {
     setCryptoParticles(cParticles);
   }, []);
 
+  // Add new state for initial buy
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [initialBuyAmount, setInitialBuyAmount] = useState("");
+  const [estimatedTokens, setEstimatedTokens] = useState("0");
+
+  // Store last attempt time to prevent rapid repeated submissions
+  const [lastAttemptTime, setLastAttemptTime] = useState(0);
+
   // ✅ Form Validation: All required fields must be filled, and wallet connected
   const isFormValid = name && ticker && description && file && account;
 
@@ -80,6 +262,19 @@ const CreatePage = () => {
 
   const handleSelectFileClick = () => {
     fileInputRef.current.click();
+  };
+
+  // Modal open/close functions
+  const openBuyModal = () => {
+    setShowBuyModal(true);
+    // Add body class to prevent scrolling when modal is open like in HowItWorksModal
+    document.body.classList.add('modal-open');
+  };
+  
+  const closeBuyModal = () => {
+    setShowBuyModal(false);
+    // Remove the body class when modal is closed
+    document.body.classList.remove('modal-open');
   };
 
   // 📤 Upload image to S3 (or server)
@@ -97,8 +292,27 @@ const CreatePage = () => {
     return data.imageUrl;
   };
 
-  // 🚀 Handle token creation
-  const handleSubmit = async (e) => {
+  // Update the calculateEstimatedTokens function
+  const calculateEstimatedTokens = (eduAmount) => {
+    if (!eduAmount) {
+      setEstimatedTokens("0");
+      return;
+    }
+    
+    try {
+      // Using contract constants from deployment
+      const BASE_PRICE = BigInt(10000000000000); // 0.00001 EDU in wei (10 * 1e12)
+      const eduWei = ethers.parseEther(eduAmount);
+      const tokens = (eduWei * BigInt(1e18)) / BASE_PRICE;
+      setEstimatedTokens(tokens.toString());
+    } catch (error) {
+      console.error("Error calculating tokens:", error);
+      setErrorMessage("Failed to calculate estimated tokens");
+    }
+  };
+
+  // Update handleSubmit
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!connected) {
@@ -111,62 +325,324 @@ const CreatePage = () => {
       return;
     }
 
+    // Clear any existing messages
+    setErrorMessage("");
+    setSuccessMessage("");
+    
+    // Show buy modal
+    openBuyModal();
+  };
+
+  // Update the handleFinalSubmit function to remove creation fee logic
+  const handleFinalSubmit = async () => {
     try {
       setIsLoading(true);
       setErrorMessage("");
       setSuccessMessage("");
 
-      const imageUrl = await uploadImageToS3(file);
-      
-      // Combine social media links into a single JSON string
-      const socialData = JSON.stringify({
-        twitter: twitter || "",
-        telegram: telegram || "",
-        website: website || ""
-      });
-
-      const signer = await provider.getSigner();
-
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-      
-      // Call the contract with the creation fee
-      const creationFee = ethers.parseEther("0.001");
-      const tx = await contract.createToken(
-        name, 
-        ticker, 
-        description, 
-        imageUrl, 
-        socialData,
-        { value: creationFee }
-      );
-      
-      await tx.wait();
-
-      setSuccessMessage("🎉 Token Created Successfully!");
-    } catch (error) {
-      console.error("Error creating token:", error);
-      
-      // Extract a more user-friendly error message
-      let errorMsg = "Token creation failed";
-      
-      if (error.message) {
-        // Check for user denied transaction
-        if (error.message.includes("user denied") || error.message.includes("User denied")) {
-          errorMsg = "Transaction was rejected in your wallet";
-        } 
-        // Check for insufficient funds
-        else if (error.message.includes("insufficient funds")) {
-          errorMsg = "Insufficient funds for transaction";
-        }
-        // Other common errors can be handled here
-        else {
-          // Extract just the main part of the error message without the technical details
-          const simpleMessage = error.message.split('(')[0].trim();
-          errorMsg = `${errorMsg}: ${simpleMessage}`;
+      // Upload image to S3 first
+      let uploadedImageUrl = "";
+      if (file) {
+        try {
+          uploadedImageUrl = await uploadImageToS3(file);
+          console.log("Image uploaded successfully:", uploadedImageUrl);
+        } catch (error) {
+          console.error("Error uploading image:", error);
+          setErrorMessage("Failed to upload image");
+          setIsLoading(false);
+          return;
         }
       }
+
+      // Validate inputs
+      if (name.trim().length === 0 || ticker.trim().length === 0) {
+        throw new Error("Name and ticker are required");
+      }
+
+      // Set up contract interaction
+      const FACTORY_ADDRESS = CONTRACT_ADDRESS || "0x4f992116f000F04c11b62D86633599aFC09DD4Dc";
+      console.log("Using factory address:", FACTORY_ADDRESS);
       
-      setErrorMessage(`❌ ${errorMsg}`);
+      try {
+        // Verify provider and access to signer
+        if (!provider) {
+          throw new Error("Provider not available. Please make sure your wallet is connected.");
+        }
+        
+        const signer = await provider.getSigner();
+        if (!signer) {
+          throw new Error("Could not get signer from provider. Please check your wallet connection.");
+        }
+        
+        const factory = new ethers.Contract(FACTORY_ADDRESS, CONTRACT_ABI, signer);
+        
+        // Check if we need to do an initial buy
+        const hasInitialBuy = initialBuyAmount && parseFloat(initialBuyAmount) > 0;
+        
+        // Show processing status
+        setSuccessMessage("Processing your request...");
+        
+        // Format the token parameters
+        const tokenParamsStruct = {
+          name: name.trim() || "Unnamed Token",
+          symbol: ticker.trim().toUpperCase() || "TOKEN",
+          description: description.trim() || "No description",
+          image: uploadedImageUrl.trim() || "",
+          social: "" // Simplified to eliminate encoding issues
+        };
+
+        // Keep track of transaction state
+        let currentStep = "creation";
+        let tokenAddress = null;
+        
+        try {
+          // STEP 1: Create the token
+          setSuccessMessage("Creating your token...");
+          console.log("Sending transaction to create token");
+          
+          let createTokenTx;
+          
+          try {
+            // Try direct transaction method first (bypass MetaMask checks silently)
+            console.log("Attempting direct transaction method");
+            
+            const functionData = factory.interface.encodeFunctionData("createToken", [tokenParamsStruct]);
+            const txRequest = {
+              to: FACTORY_ADDRESS,
+              from: account,
+              data: functionData,
+              // Explicitly set gas
+              gasLimit: "0x" + (3000000).toString(16) // 3 million gas in hex
+            };
+            
+            const txHash = await window.ethereum.request({
+              method: 'eth_sendTransaction',
+              params: [txRequest],
+            });
+            
+            console.log("Transaction sent directly:", txHash);
+            createTokenTx = { hash: txHash };
+          } catch (directTxError) {
+            console.log("Direct transaction method failed, falling back to standard approach", directTxError);
+            
+            // Use the standard approach as fallback
+            try {
+              // Use a simpler approach that avoids rate limits and supports legacy networks
+              console.log("Preparing transaction with legacy parameters only");
+              
+              // Use a fixed gas price since getFeeData is causing rate limit issues
+              const gasPrice = ethers.parseUnits("10", "gwei"); // 10 gwei is usually reasonable
+              console.log("Using fixed gas price:", ethers.formatUnits(gasPrice, "gwei"), "gwei");
+              
+              // Estimate gas with a simple approach
+              const gasEstimate = await factory.createToken.estimateGas(tokenParamsStruct);
+              console.log("Gas estimate:", gasEstimate.toString());
+              
+              // Use a simpler transaction object with only legacy parameters
+              const txOptions = {
+                gasLimit: Math.floor(Number(gasEstimate) * 1.2), // Add 20% buffer
+                gasPrice: gasPrice,
+                // Explicitly avoid any EIP-1559 parameters
+                type: 0 // Force legacy transaction type
+              };
+              
+              console.log("Using transaction options:", txOptions);
+              
+              // Add a short delay to avoid rate limits
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
+              // Send the transaction
+              createTokenTx = await factory.createToken(
+                tokenParamsStruct,
+                txOptions
+              );
+            } catch (fallbackError) {
+              // Handle rate limit errors
+              if (fallbackError.message && (
+                  fallbackError.message.includes("429") || 
+                  fallbackError.message.includes("Too many request") ||
+                  fallbackError.message.includes("rate limit"))) {
+                console.error("Rate limit hit. Please wait a moment and try again.");
+                toast.error("Network busy - please wait a moment and try again");
+                setIsLoading(false);
+                return;
+              }
+              
+              // Re-throw other errors
+              throw fallbackError;
+            }
+          }
+          
+          console.log("Token creation transaction sent:", createTokenTx.hash);
+          setSuccessMessage("Token creation in progress. Please wait for confirmation...");
+          
+          // Wait for the transaction to be mined
+          const receipt = await provider.waitForTransaction(createTokenTx.hash);
+          console.log("Token creation confirmed:", receipt);
+          
+          // Extract the token address from the event logs
+          for (const log of receipt.logs) {
+            try {
+              const decoded = factory.interface.parseLog(log);
+              if (decoded && decoded.name === "TokenCreated") {
+                tokenAddress = decoded.args[1];
+                console.log("Created token address:", tokenAddress);
+                break;
+              }
+            } catch (e) {
+              // Skip logs that don't match
+            }
+          }
+          
+          if (!tokenAddress) {
+            throw new Error("Failed to extract token address from transaction logs");
+          }
+          
+          // If no initial buy, we're done
+          if (!hasInitialBuy) {
+            setSuccessMessage(`🎉 Token created successfully! Address: ${tokenAddress}`);
+            setShowBuyModal(false);
+            return;
+          }
+          
+          // STEP 2: Buy initial tokens directly from the token contract
+          currentStep = "buying";
+          try {
+            // Small delay to allow UI to update and prepare for the next step
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const buyAmount = ethers.parseEther(initialBuyAmount);
+            console.log("Buying initial tokens:", ethers.formatEther(buyAmount), "EDU");
+            setSuccessMessage(`Token created! Now purchasing initial tokens...`);
+            
+            // Create a contract instance for the token
+            const tokenContract = new ethers.Contract(
+              tokenAddress,
+              HYPETOKEN_ABI,
+              signer
+            );
+            
+            let buyTx;
+            
+            try {
+              // Try direct transaction method first for buying tokens
+              console.log("Attempting direct transaction method for token purchase");
+              
+              const functionData = tokenContract.interface.encodeFunctionData("buyTokens", []);
+              const txRequest = {
+                to: tokenAddress,
+                from: account,
+                value: buyAmount.toString(),
+                data: functionData,
+                gasLimit: "0x" + (2000000).toString(16) // 2 million gas in hex
+              };
+              
+              const txHash = await window.ethereum.request({
+                method: 'eth_sendTransaction',
+                params: [txRequest],
+              });
+              
+              console.log("Token purchase sent directly:", txHash);
+              buyTx = { hash: txHash };
+            } catch (directBuyError) {
+              console.log("Direct purchase method failed, falling back to standard approach", directBuyError);
+              
+              // Use standard approach as fallback
+              try {
+                // Use a simpler approach for buying tokens
+                console.log("Preparing token purchase with legacy parameters");
+                
+                // Use a fixed gas price
+                const gasPrice = ethers.parseUnits("10", "gwei"); // 10 gwei
+                console.log("Using fixed gas price for purchase:", ethers.formatUnits(gasPrice, "gwei"), "gwei");
+                
+                // Add a short delay before the next transaction to avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Standard ethers.js approach for ethers.js v6
+                buyTx = await tokenContract.buyTokens({
+                  value: buyAmount,
+                  gasLimit: 2000000, // Use a number instead of BigInt string
+                  gasPrice: gasPrice,
+                  type: 0 // Force legacy transaction type
+                });
+              } catch (fallbackBuyError) {
+                // Handle rate limit errors
+                if (fallbackBuyError.message && (
+                    fallbackBuyError.message.includes("429") || 
+                    fallbackBuyError.message.includes("Too many request") ||
+                    fallbackBuyError.message.includes("rate limit"))) {
+                  console.error("Rate limit hit during token purchase. Please wait a moment and try again.");
+                  setSuccessMessage(`Token created successfully at ${tokenAddress}. 
+Initial token purchase failed due to network congestion. You can try buying tokens later.`);
+                  setIsLoading(false);
+                  setShowBuyModal(false);
+                  return;
+                }
+                
+                // Re-throw other errors
+                throw fallbackBuyError;
+              }
+            }
+            
+            console.log("Token buy transaction sent:", buyTx.hash);
+            setSuccessMessage(`Initial token purchase in progress. Please wait for confirmation...`);
+            
+            // Wait for the buy transaction to be mined
+            const buyReceipt = await provider.waitForTransaction(buyTx.hash);
+            console.log("Token buy confirmed:", buyReceipt);
+            
+            // Success for both transactions
+            setSuccessMessage(`🎉 Success! Your token "${name}" has been created and initial tokens purchased.
+Address: ${tokenAddress}`);
+          } catch (error) {
+            console.error("Error buying initial tokens:", error);
+            if (error.message.includes("user rejected")) {
+              // User rejected the buy transaction, but token creation was successful
+              setSuccessMessage(`Token created successfully at ${tokenAddress}. 
+You chose not to proceed with the initial token purchase.`);
+            } else {
+              // Other error with buying, but token creation was successful
+              setSuccessMessage(`Token created successfully at ${tokenAddress}. 
+Initial token purchase failed: ${error.message}`);
+            }
+          }
+        } catch (error) {
+          console.error("Transaction error:", error);
+          // Check for specific error types
+          if (error.code === 'UNPREDICTABLE_GAS_LIMIT') {
+            console.error("Gas estimation failed. This often means the transaction would fail.");
+          }
+          if (error.reason) {
+            console.error("Error reason:", error.reason);
+          }
+          if (error.data) {
+            console.error("Error data:", error.data);
+          }
+          if (error.transaction) {
+            console.error("Transaction details:", {
+              from: error.transaction.from,
+              to: error.transaction.to,
+              data: error.transaction.data?.substring(0, 100) + '...' // Truncate for readability
+            });
+          }
+          
+          // Display appropriate error message to user
+          toast.error(`Error creating token: ${error.message || "Unknown error"}`);
+          setIsLoading(false);
+          return;
+        }
+        
+        setShowBuyModal(false);
+      } catch (providerError) {
+        console.error("Provider or wallet error:", providerError);
+        setErrorMessage(`Wallet connection error: ${providerError.message}`);
+        setIsLoading(false);
+        return;
+      }
+    } catch (error) {
+      console.error("Error in overall process:", error);
+        setErrorMessage(`❌ ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -439,69 +915,18 @@ const CreatePage = () => {
         </form>
       </div>
       
-      {/* Add this CSS to your component */}
-      <style jsx>{`
-        .create-btn {
-          position: relative;
-          overflow: hidden;
-          transition: all 0.3s ease;
-        }
-        
-        .create-btn.processing {
-          background: linear-gradient(45deg, #2a2a2a, #3a3a3a);
-          cursor: not-allowed;
-          opacity: 0.9;
-        }
-        
-        .processing-text {
-          display: inline-block;
-          margin-right: 5px;
-        }
-        
-        .processing-dots {
-          display: inline-block;
-          animation: dotAnimation 1.5s infinite;
-        }
-        
-        @keyframes dotAnimation {
-          0% { opacity: 0.3; }
-          50% { opacity: 1; }
-          100% { opacity: 0.3; }
-        }
-        
-        .status-message {
-          margin-top: 15px;
-          padding: 10px 15px;
-          border-radius: 4px;
-          display: flex;
-          align-items: center;
-          font-size: 0.9rem;
-          animation: fadeIn 0.3s ease-in-out;
-          border: 1px solid;
-        }
-        
-        .error-message {
-          background: rgba(255, 0, 0, 0.1);
-          border-color: rgba(255, 0, 0, 0.3);
-          color: #ff5555;
-        }
-        
-        .success-message {
-          background: rgba(0, 255, 0, 0.1);
-          border-color: rgba(0, 255, 0, 0.3);
-          color: #55ff55;
-        }
-        
-        .status-icon {
-          margin-right: 10px;
-          font-size: 1.2rem;
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      {showBuyModal && (
+        <BuyModal 
+          name={name}
+          initialBuyAmount={initialBuyAmount}
+          setInitialBuyAmount={setInitialBuyAmount}
+          calculateEstimatedTokens={calculateEstimatedTokens}
+          estimatedTokens={BigInt(estimatedTokens)/BigInt(1e18)}
+          handleFinalSubmit={handleFinalSubmit}
+          isLoading={isLoading}
+          onClose={closeBuyModal}
+        />
+      )}
     </div>
   );
 };

@@ -1048,10 +1048,13 @@ const CoinDetailPage = () => {
     if (num === undefined || num === null) return '0';
 
     // Convert to number if it's a string
-    const numValue = typeof num === 'string' ? parseFloat(num) : num;
+    let numValue = typeof num === 'string' ? parseFloat(num) : num;
 
     // Handle invalid numbers
     if (isNaN(numValue)) return '0';
+
+    // FIXED VERSION: Use explicit BigInt notation
+    numValue = numValue / 1e18;
 
     // Format based on size
     if (numValue >= 1e24) return (numValue / 1e24).toFixed(2) + 'Y'; // Yotta (septillion)
@@ -1905,7 +1908,7 @@ const CoinDetailPage = () => {
             {token.holders && token.holders.map((holder, index) => (
               <div key={index} className="holder-row">
                 <div className="holder-address" title={holder.address}>
-                  {index + 1}. {truncateAddress(holder.address)}
+                  {index + 1}. {holder.address}
                 </div>
                 <div className="holder-percentage">
                   <div className="percentage-bar" style={{ width: `${holder.percentage}%` }}></div>
