@@ -70,6 +70,12 @@ const FACTORY_ABI = [
         "internalType": "address",
         "name": "token",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "initialSupply",
+        "type": "uint256"
       }
     ],
     "name": "TokenCreated",
@@ -464,31 +470,44 @@ const CreatePage = () => {
       if (tokenCreatedEvent) {
         const decoded = factory.interface.parseLog(tokenCreatedEvent);
         const tokenAddress = decoded.args[1];
-
+        const userAddress = decoded.args[0];
+        const initialSupply = decoded.args[2];
         // Call your backend API to insert the token
         try {
-          const userAddress = await provider.getSigner().getAddress(); // or however you get the creator address
-          const response = await fetch('/api/insertToken', {
+          const response = await fetch(process.env.NEXT_PUBLIC_API_BASE_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              tokenAddress,
-              creator: userAddress,
-              initialInvestment: initialBuy.toString(),
-              txHash: tx.hash,
+              query: `
+                mutation CreateToken($tokenAddress: String!, $creator: String!, $initialInvestment: String!) {
+                  createToken(
+                    tokenAddress: $tokenAddress
+                    creator: $creator
+                    initialInvestment: $initialInvestment
+                  )
+                }
+              `,
+              variables: {
+                tokenAddress,
+                creator: userAddress,
+                initialInvestment: initialSupply.toString(),
+              }
             }),
           });
 
           const result = await response.json();
-          if (!result.success) {
-            setSuccessMessage(`🎉 Token created! But failed to update backend: ${result.error || 'Unknown error'}`);
-            setShowBuyModal(false);
+
+          if (result.errors) {
+            // handle error
+            console.error(result.errors);
+            setSuccessMessage(`🎉 Token created! But failed to update backend: ${result.errors[0].message}`);
           } else {
+            // handle success
+            console.log('Mutation result:', result.data.createToken);
             setSuccessMessage(`🎉 Token created and backend updated! Address: ${tokenAddress}`);
-            setShowBuyModal(false);
           }
         } catch (err) {
-          setSuccessMessage(`🎉 Token created! But failed to update backend: ${err.message}`);
+          setSuccessMessage(`�� Token created! But failed to update backend: ${err.message}`);
         }
 
         // Close the modal and reset form
@@ -800,5 +819,28 @@ const CreatePage = () => {
     </div>
   );
 };
+
+async function callCreateTokenMutation({ tokenAddress, creator, initialInvestment }) {
+  const response = await fetch(process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: `
+        mutation CreateToken($tokenAddress: String!, $creator: String!, $initialInvestment: String!) {
+          createToken(
+            tokenAddress: $tokenAddress
+            creator: $creator
+            initialInvestment: $initialInvestment
+          )
+        }
+      `,
+      variables: { tokenAddress, creator, initialInvestment }
+    }),
+  });
+
+  const result = await response.json();
+  if (result.errors) throw new Error(result.errors[0].message);
+  return result.data.createToken;
+}
 
 export default CreatePage;
