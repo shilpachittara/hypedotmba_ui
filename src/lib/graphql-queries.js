@@ -5,7 +5,7 @@ export const GET_ALL_TOKENS = gql`
   query GetAllTokens {
     getAllTokens {
       id
-      contractAddress
+      tokenAddress
       factoryAddress
       name
       symbol
@@ -15,13 +15,7 @@ export const GET_ALL_TOKENS = gql`
       creatorAddress
       totalSupply
       tokensSold
-      dailyVolume
-      marketCap
-      weeklyVolume
-      volumeChangePercent
-      holderCount
       createdAt
-      updatedAt
     }
   }
 `;
@@ -47,7 +41,6 @@ export const GET_TOKEN_BY_ADDRESS = gql`
       volumeChangePercent
       holderCount
       createdAt
-      updatedAt
     }
   }
 `;
@@ -75,7 +68,7 @@ export const GET_TOKENS_BY_FACTORY = gql`
   query GetTokensByFactory($factoryAddress: String!) {
     getTokensByFactory(factoryAddress: $factoryAddress) {
       id
-      contractAddress
+      tokenAddress
       name
       symbol
       description
@@ -83,13 +76,6 @@ export const GET_TOKENS_BY_FACTORY = gql`
       creatorAddress
       totalSupply
       tokensSold
-      dailyVolume
-      marketCap
-      weeklyVolume
-      volumeChangePercent
-      holderCount
-      createdAt
-      updatedAt
       social
       factoryAddress
     }

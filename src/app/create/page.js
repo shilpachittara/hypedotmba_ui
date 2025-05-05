@@ -34,7 +34,7 @@ const customStyles = {
   }
 };
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x4f992116f000F04c11b62D86633599aFC09DD4Dc";
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const FACTORY_ABI = [
   {
     "inputs": [
@@ -83,6 +83,61 @@ const FACTORY_ABI = [
     "type": "function"
   }
 ];
+
+// Remove the caching since it can cause issues with different providers
+const getContractInstance = async (provider) => {
+  const signer = await provider.getSigner();
+  return new ethers.Contract(CONTRACT_ADDRESS, FACTORY_ABI, signer);
+};
+
+// Cache for creation fee
+let cachedCreationFee = null;
+
+const getCreationFee = async (contract) => {
+  if (!cachedCreationFee) {
+    cachedCreationFee = await contract.CREATION_FEE();
+  }
+  return cachedCreationFee;
+};
+
+// Helper function to validate inputs
+const validateInputs = (name, ticker, description) => {
+  if (!name?.trim() || !ticker?.trim() || !description?.trim()) {
+    throw new Error("Name, ticker, and description are required");
+  }
+  
+  if (name.length > 32) throw new Error("Name must be 32 characters or less");
+  if (ticker.length > 8) throw new Error("Ticker must be 8 characters or less");
+  if (description.length > 256) throw new Error("Description must be 256 characters or less");
+};
+
+// Helper function to format social links
+const formatSocialLinks = (telegram, website, twitter) => {
+  const socialLinks = {
+    telegram: (telegram || "").trim().slice(0, 64),
+    website: (website || "").trim().slice(0, 64),
+    twitter: (twitter || "").trim().slice(0, 64)
+  };
+  return JSON.stringify(socialLinks).slice(0, 256);
+};
+
+// Helper function to handle transaction errors
+const handleTransactionError = (error) => {
+  console.error("Transaction error:", error);
+  
+  if (error.message.includes("429") || error.message.includes("Too many request")) {
+    return "Network busy - please wait a moment and try again";
+  } else if (error.message.includes("user rejected")) {
+    return "Transaction was rejected by user";
+  } else if (error.message.includes("insufficient funds")) {
+    return "Insufficient funds for transaction";
+  } else if (error.message.includes("gas required exceeds allowance")) {
+    return "Gas limit too low. Please try again.";
+  } else if (error.message.includes("missing revert data")) {
+    return "Contract call failed - please verify the contract address and network";
+  }
+  return error.message || "Transaction failed";
+};
 
 // Update BuyModal component
 const BuyModal = ({ 
@@ -331,6 +386,9 @@ const CreatePage = () => {
       setErrorMessage("");
       setSuccessMessage("");
 
+      // Validate inputs first
+      validateInputs(name, ticker, description);
+
       // Upload image to S3 first
       let uploadedImageUrl = "";
       if (file) {
@@ -345,163 +403,116 @@ const CreatePage = () => {
         }
       }
 
-      // Validate inputs
-      if (name.trim().length === 0 || ticker.trim().length === 0) {
-        throw new Error("Name and ticker are required");
-      }
-
-      // Set up contract interaction
-      const FACTORY_ADDRESS = CONTRACT_ADDRESS;
-      console.log("Using factory address:", FACTORY_ADDRESS);
+      // Get contract instance
+      const factory = await getContractInstance(provider);
       
-      try {
-        // Verify provider and access to signer
-        if (!provider) {
-          throw new Error("Provider not available. Please make sure your wallet is connected.");
-        }
-        
-        const signer = await provider.getSigner();
-        console.log("Signer address:", await signer.getAddress());
+      // Verify contract is deployed and get creation fee in parallel
+      const [code, creationFee] = await Promise.all([
+        provider.getCode(CONTRACT_ADDRESS),
+        getCreationFee(factory)
+      ]);
 
-        // Create contract instance
-        const factory = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, signer);
-        console.log("Contract instance created");
-
-        // Verify contract is deployed
-        const code = await provider.getCode(FACTORY_ADDRESS);
-        console.log("Contract code:", code);
-        if (code === "0x") {
-          throw new Error("Contract not deployed at this address");
-        }
-        
-        // Check if we need to do an initial buy
-        const hasInitialBuy = initialBuyAmount && parseFloat(initialBuyAmount) > 0;
-        
-        // Show processing status
-        setSuccessMessage("Processing your request...");
-        
-        // Format and limit social links
-        const socialLinks = JSON.stringify({
-          telegram: (telegram || "").trim().slice(0, 64),
-          website: (website || "").trim().slice(0, 64),
-          twitter: (twitter || "").trim().slice(0, 64)
-        }).slice(0, 256);
-
-        // Prepare token parameters with size limits
-        const tokenParams = {
-          name: name.trim().slice(0, 32),
-          symbol: ticker.trim().slice(0, 8),
-          description: description.trim().slice(0, 256),
-          image: uploadedImageUrl.slice(0, 256),
-          social: socialLinks
-        };
-
-        // Get creation fee from contract
-        const creationFee = await factory.CREATION_FEE();
-        const initialBuy = hasInitialBuy ? ethers.parseEther(initialBuyAmount) : ethers.parseEther("0");
-        const totalValue = creationFee + initialBuy;
-
-        console.log("Creation fee:", ethers.formatEther(creationFee), "ETH");
-        console.log("Total value:", ethers.formatEther(totalValue), "ETH");
-
-        // Encode the function call
-        const iface = new ethers.Interface(FACTORY_ABI);
-        const data = iface.encodeFunctionData("createToken", [tokenParams]);
-        console.log("Encoded function data:", data);
-
-        // Estimate gas using provider
-        console.log("Estimating gas for token creation...");
-        const estimatedGas = await provider.estimateGas({
-          to: FACTORY_ADDRESS,
-          data: data,
-          value: totalValue
-        });
-
-        // Add 20% buffer to estimated gas
-        const gasLimit = ethers.toBigInt(estimatedGas) * ethers.toBigInt(12) / ethers.toBigInt(10);
-        console.log("Estimated gas:", estimatedGas.toString());
-        console.log("Gas limit with buffer:", gasLimit.toString());
-
-        // Add delay before transaction to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Send transaction
-        const tx = await signer.sendTransaction({
-          to: FACTORY_ADDRESS,
-          data: data,
-          value: totalValue,
-          gasLimit: gasLimit
-        });
-
-        toast.success("Transaction sent. Waiting for confirmation...");
-        const receipt = await tx.wait();
-        console.log("✅ Transaction confirmed:", receipt);
-
-        // Extract the token address from the event logs
-        let tokenAddress = null;
-        
-        // Try using the contract interface to parse logs
-        try {
-          const tokenCreatedEvent = receipt.logs
-            .filter(log => {
-              try {
-                const decoded = iface.parseLog(log);
-                return decoded && decoded.name === "TokenCreated";
-              } catch (e) {
-                return false;
-              }
-            })[0];
-
-          if (tokenCreatedEvent) {
-            const decoded = iface.parseLog(tokenCreatedEvent);
-            tokenAddress = decoded.args[1]; // The token address is the second indexed parameter
-          }
-        } catch (error) {
-          console.log("Error parsing logs with contract interface:", error.message);
-        }
-        
-        // Manual event parsing (backup method)
-        if (!tokenAddress) {
-          console.log("Trying manual event parsing...");
-          const eventSignature = ethers.id("TokenCreated(address,address)");
-          const tokenCreatedLog = receipt.logs.find(log => 
-            log.topics && log.topics[0] === eventSignature
-          );
-          
-          if (tokenCreatedLog) {
-            tokenAddress = ethers.getAddress("0x" + tokenCreatedLog.topics[2].slice(26));
-          }
-        }
-
-        if (tokenAddress) {
-          setSuccessMessage(`🎉 Token created successfully! Address: ${tokenAddress}`);
-          setShowBuyModal(false);
-        } else {
-          setSuccessMessage(`Transaction successful but could not extract token address. TX: ${tx.hash}`);
-        }
-
-      } catch (err) {
-        console.error("❌ Create token failed:", err);
-        
-        if (err.message.includes("429") || err.message.includes("Too many request")) {
-          toast.error("Network busy - please wait a moment and try again");
-        } else if (err.message.includes("user rejected")) {
-          toast.error("Transaction was rejected by user");
-        } else if (err.message.includes("insufficient funds")) {
-          toast.error("Insufficient funds for transaction");
-        } else if (err.message.includes("gas required exceeds allowance")) {
-          toast.error("Gas limit too low. Please try again.");
-        } else if (err.message.includes("missing revert data")) {
-          toast.error("Contract call failed - please verify the contract address and network");
-        } else {
-          toast.error(err?.message || "Transaction failed");
-        }
-      } finally {
-        setIsLoading(false);
+      if (code === "0x") {
+        throw new Error("Contract not deployed at this address");
       }
+
+      const hasInitialBuy = initialBuyAmount && parseFloat(initialBuyAmount) > 0;
+      const initialBuy = hasInitialBuy ? ethers.parseEther(initialBuyAmount) : ethers.parseEther("0");
+      const totalValue = creationFee + initialBuy;
+
+      console.log("Total value:", ethers.formatEther(totalValue), "ETH");
+
+      // Prepare token parameters
+      const tokenParams = {
+        name: name.trim().slice(0, 32),
+        symbol: ticker.trim().slice(0, 8),
+        description: description.trim().slice(0, 256),
+        image: uploadedImageUrl.slice(0, 256),
+        social: formatSocialLinks(telegram, website, twitter)
+      };
+
+      // Send transaction with gas estimation
+      const estimatedGas = await factory.createToken.estimateGas(tokenParams, {
+        value: totalValue
+      });
+
+      const gasLimit = estimatedGas * BigInt(12) / BigInt(10); // Add 20% buffer
+
+      console.log("Gas limit:", gasLimit);
+      const tx = await factory.createToken(tokenParams, {
+        value: totalValue,
+        gasLimit
+      });
+
+      toast.success("Transaction sent. Waiting for confirmation...");
+      const receipt = await tx.wait();
+
+      console.log("Receipt:", receipt.logs);
+      // Extract token address from event logs
+      const tokenCreatedEvent = receipt.logs
+        .filter(log => {
+          try {
+            const decoded = factory.interface.parseLog(log);
+            return decoded && decoded.name === "TokenCreated";
+          } catch (e) {
+            return false;
+          }
+        })[0];
+
+        console.log(tokenCreatedEvent)
+
+      if (tokenCreatedEvent) {
+        const decoded = factory.interface.parseLog(tokenCreatedEvent);
+        const tokenAddress = decoded.args[1];
+
+        // Call your backend API to insert the token
+        try {
+          const userAddress = await provider.getSigner().getAddress(); // or however you get the creator address
+          const response = await fetch('/api/insertToken', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tokenAddress,
+              creator: userAddress,
+              initialInvestment: initialBuy.toString(),
+              txHash: tx.hash,
+            }),
+          });
+
+          const result = await response.json();
+          if (!result.success) {
+            setSuccessMessage(`🎉 Token created! But failed to update backend: ${result.error || 'Unknown error'}`);
+            setShowBuyModal(false);
+          } else {
+            setSuccessMessage(`🎉 Token created and backend updated! Address: ${tokenAddress}`);
+            setShowBuyModal(false);
+          }
+        } catch (err) {
+          setSuccessMessage(`🎉 Token created! But failed to update backend: ${err.message}`);
+        }
+
+        // Close the modal and reset form
+        setShowBuyModal(false);
+        setShowMore(false);
+        setName("");
+        setTicker("");
+        setDescription("");
+        setFile(null);
+        setTelegram("");
+        setWebsite("");
+        setTwitter("");
+        setInitialBuyAmount("");
+        setEstimatedTokens("0");
+      } else {
+        setSuccessMessage(`Transaction successful but could not extract token address. TX: ${tx.hash}`);
+        // Still close the modal even if we couldn't extract the address
+        setShowBuyModal(false);
+      }
+
     } catch (error) {
-      console.error("Error in overall process:", error);
-      setErrorMessage(`❌ ${error.message}`);
+      const errorMessage = handleTransactionError(error);
+      setErrorMessage(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

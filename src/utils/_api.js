@@ -114,13 +114,13 @@ export const fetchTokens = async () => {
  * @param {number} holderLimit - Optional limit for number of holders to fetch
  * @returns {Object} - Token details
  */
-export const fetchTokenById = async (tokenId, holderLimit = 20) => {
+export const fetchTokenById = async (tokenId) => {
   try {
     const GET_TOKEN_BY_ID = gql`
-      query GetTokenById($id: ID!, $holderLimit: Int) {
-        getTokenById(id: $id, holderLimit: $holderLimit) {
+      query GetTokenById($id: ID!) {
+        getTokenById(id: $id) {
           id
-          contractAddress
+          tokenAddress
           name
           symbol
           description
@@ -128,18 +128,7 @@ export const fetchTokenById = async (tokenId, holderLimit = 20) => {
           creatorAddress
           totalSupply
           tokensSold
-          dailyVolume
-          marketCap
-          weeklyVolume
-          volumeChangePercent
-          holderCount
-          holders {
-            address
-            balance
-            percentage
-          }
           createdAt
-          updatedAt
           social
           factoryAddress
         }
@@ -148,7 +137,7 @@ export const fetchTokenById = async (tokenId, holderLimit = 20) => {
 
     const { data, error } = await apolloClient.query({
       query: GET_TOKEN_BY_ID,
-      variables: { id: tokenId, holderLimit },
+      variables: { id: tokenId },
       errorPolicy: 'all'
     });
     
@@ -166,7 +155,7 @@ export const fetchTokenById = async (tokenId, holderLimit = 20) => {
     
     return {
       id: token.id,
-      contractAddress: token.contractAddress,
+      contractAddress: token.tokenAddress,
       name: token.name,
       symbol: token.symbol,
       description: token.description || "",
@@ -363,6 +352,9 @@ export const fetchTokensByFactory = async (factoryAddress) => {
       errorPolicy: 'all'
     });
     
+    console.log("Data:", data);
+    console.log("Error:", error);
+
     if (error) {
       console.error("GraphQL error:", error);
       throw new Error(`GraphQL error: ${error.message}`);
@@ -384,17 +376,17 @@ export const fetchTokensByFactory = async (factoryAddress) => {
     
     // Transform the data to match the expected format for TokenCard
     return data.getTokensByFactory.map(token => ({
-      id: token.contractAddress,
+      id: token.tokenAddress,
       name: token.name,
       symbol: token.symbol,
       description: token.description || "",
       image: token.imageUrl || "/default-token-image.png",
       creator: token.creatorAddress || "",
       price: 0, // This will be fetched separately
-      marketCap: token.marketCap || 0,
-      dailyVolume: token.dailyVolume || 0,
-      volume7dChange: token.volumeChangePercent || 0,
-      priceChange24h: 0, // This isn't directly in your schema
+      //marketCap: token.marketCap || 0,
+      //dailyVolume: token.dailyVolume || 0,
+      //volume7dChange: token.volumeChangePercent || 0,
+      //priceChange24h: 0, // This isn't directly in your schema
       social: token.social ? JSON.parse(token.social) : {},
       createdAt: token.createdAt || new Date().toISOString(),
       holderCount: token.holderCount || 0,
